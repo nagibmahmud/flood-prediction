@@ -200,21 +200,22 @@
                 .then(function(response) {
                     if (!response.ok) {
                         msg.textContent = 'Error: HTTP ' + response.status;
-                        return;
+                        return null;
                     }
                     return response.json();
                 })
-                .then(function(r) { return r.json(); })
                 .then(function(data) {
+                    if (!data) return;
+                    
                     if (data.error) {
-                        msg.innerHTML = 'Error: ' + data.error;
-                        msg.className = 'message error';
+                        msg.textContent = 'Error: ' + data.error;
                         return;
                     }
                     
                     if (!data.daily || !data.daily.time) {
-                        msg.innerHTML = 'No data found';
-                        msg.className = 'message error';
+                        msg.textContent = 'No data found';
+                        return;
+                    }
                         return;
                     }
                     
@@ -243,12 +244,10 @@
                     document.getElementById('rainfall').value = rain.join(', ');
                     document.getElementById('avg_temp').value = temp.join(', ');
                     
-                    msg.innerHTML = 'Loaded ' + years.length + ' years!';
-                    msg.className = 'message success';
+                    msg.textContent = 'Loaded ' + years.length + ' years!';
                 })
                 .catch(function(e) {
-                    msg.innerHTML = 'Error: ' + e.message;
-                    msg.className = 'message error';
+                    msg.textContent = 'Error: ' + e.message;
                 });
         }
         
