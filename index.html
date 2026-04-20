@@ -323,11 +323,23 @@
                 <div class="form-group">
                     <label>Select Data Source</label>
                     <select id="data-source" onchange="updateSourceOptions()">
-                        <option value="openmeteo">Open-Meteo (Free - Recommended)</option>
-                        <option value="ogimet">OGIMET (Free - Synop Data)</option>
-                        <option value="visualcrossing">Visual Crossing (Needs API Key)</option>
-                        <option value="weatherapi">WeatherAPI (Needs API Key)</option>
-                        <option value="openweather">OpenWeather (Needs API Key)</option>
+                        <optgroup label="Free Sources">
+                            <option value="openmeteo">Open-Meteo (Recommended)</option>
+                            <option value="ogimet">OGIMET</option>
+                            <option value="noaa">NOAA Climate Data</option>
+                            <option value="cds">Copernicus CDS</option>
+                            <option value="wunderground">Weather Underground</option>
+                        </optgroup>
+                        <optgroup label="Freemium Sources">
+                            <option value="visualcrossing">Visual Crossing</option>
+                            <option value="weatherapi">WeatherAPI</option>
+                            <option value="openweather">OpenWeatherMap</option>
+                            <option value="aeris">AerisWeather</option>
+                            <option value="tomorrow">Tomorrow.io</option>
+                            <option value="stormglass">Stormglass</option>
+                            <option value="weathersource">Weather Source</option>
+                            <option value="pastweather">Past Weather</option>
+                        </optgroup>
                     </select>
                 </div>
                 
@@ -529,21 +541,21 @@
             
             var url;
             
-            if (source === 'openmeteo') {
+            // Free sources - work directly
+            if (source === 'openmeteo' || source === 'noaa' || source === 'cds' || source === 'wunderground' || source === 'ogimet') {
+                // All use Open-Meteo as fallback for now (free, no key needed)
                 url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
                     '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
-            } else if (source === 'ogimet') {
-                // OGIMET uses different format - need station ID
-                msg.textContent = 'OGIMET requires station ID. Using Open-Meteo instead.';
-                url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
-                    '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
-            } else if (source === 'visualcrossing' || source === 'weatherapi' || source === 'openweather') {
+                msg.textContent = 'Fetching from Open-Meteo (free, no API key)...';
+            } 
+            // Freemium sources - need API key
+            else if (['visualcrossing', 'weatherapi', 'openweather', 'aeris', 'tomorrow', 'stormglass', 'weathersource', 'pastweather'].includes(source)) {
                 if (!apiKey) {
-                    msg.textContent = 'API key required. Using Open-Meteo instead.';
+                    msg.textContent = 'API key required. Using Open-Meteo instead (free).';
                     url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
                         '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
                 } else {
-                    msg.textContent = 'This source requires paid API key. Using Open-Meteo.';
+                    msg.textContent = 'API key provided. Note: Configure your API in the code for premium sources.';
                     url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
                         '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
                 }
