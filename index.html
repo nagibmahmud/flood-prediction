@@ -366,6 +366,20 @@
             <h2 class="card-title">Prediction Results for Year <span id="result-year"></span></h2>
             
             <div class="result-grid">
+                <div class="result-box" id="rain-box">
+                    <h3>Predicted Weather</h3>
+                    <div class="result-row">
+                        <span>Rainfall</span>
+                        <span id="pred-rainfall"></span>
+                    </div>
+                    <div class="result-row">
+                        <span>Avg Temperature</span>
+                        <span id="pred-temp"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-grid">
                 <div class="result-box" id="surma-box">
                     <h3>Surma River</h3>
                     <div class="result-row">
@@ -550,6 +564,14 @@
             var rM = slope(years, rainfall);
             var rB = intercept(years, rainfall, rM);
             var predRain = Math.round((rM * predictYear + rB) * 100) / 100;
+            
+            // Linear regression for temperature
+            var tM = slope(years, avgTemp);
+            var tB = intercept(years, avgTemp, tM);
+            var predTemp = Math.round((tM * predictYear + tB) * 100) / 100;
+            
+            document.getElementById('pred-rainfall').textContent = predRain + ' mm';
+            document.getElementById('pred-temp').textContent = predTemp + ' Â°C';
             
             // Linear regression for rivers
             var sM = slope(rainfall, surma);
