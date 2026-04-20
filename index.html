@@ -145,48 +145,21 @@
                     </select>
                 </div>
                 
-                <div class="form-group" id="customLocation" style="display:none;">
+                <div class="form-group" id="customLocationDiv" style="display:none;">
                     <label>Custom Coordinates</label>
                     <div class="location-group">
-                        <input type="text" id="lat" value="24.8918" placeholder="Latitude">
-                        <input type="text" id="lon" value="91.8697" placeholder="Longitude">
+                        <input type="text" id="api_lat" value="24.8918" placeholder="Latitude">
+                        <input type="text" id="api_lon" value="91.8697" placeholder="Longitude">
                     </div>
                 </div>
+                
+                <input type="hidden" id="hidden_lat" value="24.8918">
+                <input type="hidden" id="hidden_lon" value="91.8697">
                 
                 <div class="form-group">
                     <label>ðŸ“… Start Year</label>
                     <input type="number" id="api_start_year" value="2020" min="2015" max="2025">
                     <p class="hint">Note: Start from 2020 for best results</p>
-                </div>
-                
-                <div class="form-group">
-                    <label>Data Source</label>
-                    <select id="dataSource" onchange="updateApiFields()">
-                        <option value="openmeteo">Open-Meteo (Recommended)</option>
-                        <option value="visualcrossing">Visual Crossing</option>
-                        <option value="openweather">OpenWeather (Historical)</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Select Location (Bangladesh)</label>
-                    <select id="locationPreset" onchange="updateLocation()">
-                        <option value="sylhet">Sylhet (24.8918, 91.8697)</option>
-                        <option value="sylhetcity">Sylhet City (24.9045, 91.8611)</option>
-                        <option value="moulvibazar">Moulvibazar (24.4829, 91.7703)</option>
-                        <option value="habiganj">Habiganj (24.3745, 91.4155)</option>
-                        <option value="sunamganj">Sunamganj (25.0667, 91.4000)</option>
-                        <option value="custom">Custom Location</option>
-                    </select>
-                </div>
-                
-                <input type="hidden" id="lat" value="24.8918">
-                <input type="hidden" id="lon" value="91.8697">
-                
-                <div class="form-group">
-                    <label>Start Year</label>
-                    <input type="number" id="api_start_year" value="2020" min="2015" max="2025">
-                    <p class="hint">Note: Most data available from 2020 onwards</p>
                 </div>
                 
                 <div class="form-group">
@@ -288,11 +261,11 @@
             };
             
             if (preset === 'custom') {
-                document.getElementById('customLocation').style.display = 'block';
+                document.getElementById('customLocationDiv').style.display = 'block';
             } else {
-                document.getElementById('customLocation').style.display = 'none';
-                document.getElementById('lat').value = locations[preset].lat;
-                document.getElementById('lon').value = locations[preset].lon;
+                document.getElementById('customLocationDiv').style.display = 'none';
+                document.getElementById('hidden_lat').value = locations[preset].lat;
+                document.getElementById('hidden_lon').value = locations[preset].lon;
             }
         }
         
@@ -354,13 +327,22 @@
         }
         
         async function fetchWeatherData() {
-            var lat = document.getElementById('lat').value;
-            var lon = document.getElementById('lon').value;
+            var preset = document.getElementById('locationPreset').value;
+            var lat, lon;
+            
+            if (preset === 'custom') {
+                lat = document.getElementById('api_lat').value;
+                lon = document.getElementById('api_lon').value;
+            } else {
+                lat = document.getElementById('hidden_lat').value;
+                lon = document.getElementById('hidden_lon').value;
+            }
+            
             var startYear = parseInt(document.getElementById('api_start_year').value);
             var endYear = 2025;
             
-            if (!lat || !lon) {
-                alert('Please enter latitude and longitude');
+            if (!lat || !lon || lat === '' || lon === '') {
+                alert('Please select a location');
                 return;
             }
             
@@ -370,7 +352,6 @@
             var years = [], rainfall = [], avgTemp = [], maxTemp = [];
             
             try {
-                // Open-Meteo API (free, no key needed)
                 var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
                     '&start_date=' + startYear + '-01-01&end_date=' + endYear + '-12-31&daily=precipitation_sum,temperature_2m_max,temperature_2m_mean&timezone=auto';
                 
