@@ -186,6 +186,8 @@
         }
         
         function fetchData() {
+            alert('Button clicked!');
+            
             var loc = document.getElementById('location').value.split(',');
             var lat = loc[0], lon = loc[1];
             var startYear = parseInt(document.getElementById('api_year').value);
@@ -196,6 +198,8 @@
             
             var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
                 '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
+            
+            alert('URL: ' + url);
             
             fetch(url)
                 .then(function(r) { return r.json(); })
