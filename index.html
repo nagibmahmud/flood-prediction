@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Prediction System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: white; border-radius: 15px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; color: #444; margin-bottom: 8px; }
+        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; }
+        input[type="text"]:focus { outline: none; border-color: #667eea; }
+        .hint { font-size: 12px; color: #888; margin-top: 5px; }
+        .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn:hover { transform: translateY(-2px); }
+        .error { background: #fee; color: #c00; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        
+        .hidden { display: none; }
+        h2 { color: #444; margin: 30px 0 15px; }
+        .prediction-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .prediction-box { background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; }
+        .prediction-box h3 { color: #667eea; margin-bottom: 15px; }
+        .data-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .data-label { color: #666; }
+        .data-value { font-weight: 600; }
+        .risk-high { color: #e74c3c; font-weight: bold; }
+        .risk-low { color: #27ae60; font-weight: bold; }
+        .chart-container { position: relative; height: 300px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #667eea; color: white; }
+        .btn-back { display: block; text-align: center; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" id="input-form">
+            <h1>Flood Prediction System</h1>
+            <p class="subtitle">Surma & Kushiyara River Basin</p>
+            
+            <div id="error-msg" class="error hidden"></div>
+            
+            <form id="predict-form">
+                <div class="form-group">
+                    <label>Rainfall (mm) - 10 years (comma separated)</label>
+                    <input type="text" id="rainfall" value="4210, 5120, 3950, 4480, 4100, 3850, 5430, 4320, 5080, 4250">
+                    <p class="hint">Years 2016-2025</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Average Temperature (Â°C) - 10 years</label>
+                    <input type="text" id="avg_temp" value="25.8, 26.1, 25.9, 26.0, 25.7, 26.3, 26.5, 26.8, 26.4, 27.1">
+                </div>
+                
+                <div class="form-group">
+                    <label>Max Temperature (Â°C) - 10 years</label>
+                    <input type="text" id="max_temp" value="34.5, 35.0, 34.2, 34.2, 34.0, 36.1, 35.8, 37.2, 35.4, 36.8">
+                </div>
+                
+                <div class="form-group">
+                    <label>Surma Water Level (m) - 10 years</label>
+                    <input type="text" id="surma" value="11.45, 11.95, 10.80, 11.35, 11.10, 10.50, 13.00, 11.05, 12.45, 11.15">
+                </div>
+                
+                <div class="form-group">
+                    <label>Kushiyara Water Level (m) - 10 years</label>
+                    <input type="text" id="kushiyara" value="13.20, 14.10, 12.85, 13.50, 13.15, 12.40, 17.57, 13.10, 15.20, 13.35">
+                </div>
+                
+                <button type="button" class="btn" onclick="runPredict()">Predict Flood Risk</button>
+            </form>
+        </div>
+        
+        <div class="card hidden" id="results">
+            <h1>Flood Prediction Results</h1>
+            
+            <h2>Predictions for 2026-2027</h2>
+            <div class="prediction-grid" id="predictions"></div>
+            
+            <h2>Rainfall Trend</h2>
+            <div class="chart-container"><canvas id="rainfallChart"></canvas></div>
+            
+            <h2>Temperature Trend</h2>
+            <div class="chart-container"><canvas id="tempChart"></canvas></div>
+            
+            <h2>Water Level Prediction</h2>
+            <div class="chart-container"><canvas id="waterChart"></canvas></div>
+            
+            <h2>Historical Data</h2>
+            <table id="history-table">
+                <thead>
+                    <tr><th>Year</th><th>Rainfall</th><th>Avg Temp</th><th>Max Temp</th><th>Surma</th><th>Kushiyara</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            
+            <a href="#" class="btn-back" onclick="showForm(); return false;">Back to Input</a>
+        </div>
+    </div>
+    
+    <script>
+        let charts = [];
+        
+        function parseList(str) {
+            return str.split(',').map(function(x) { return parseFloat(x.trim()); }).filter(function(x) { return !isNaN(x); });
+        }
+        
+        function matrixMultiply(A, B) {
+            var result = [];
+            for (var i = 0; i < A.length; i++) {
+                result[i] = [];
+                for (var j = 0; j < B[0].length; j++) {
+                    var sum = 0;
+                    for (var k = 0; k < A[0].length; k++) {
+                        sum += A[i][k] * B[k][j];
+                    }
+                    result[i][j] = sum;
+                }
+            }
+            return result;
+        }
+        
+        function matrixTranspose(A) {
+            var result = [];
+            for (var j = 0; j < A[0].length; j++) {
+                result[j] = [];
+                for (var i = 0; i < A.length; i++) {
+                    result[j][i] = A[i][j];
+                }
+            }
+            return result;
+        }
+        
+        function solveLinearSystem(A, b) {
+            var n = A.length;
+            var aug = [];
+            for (var i = 0; i < n; i++) {
+                aug[i] = [];
+                for (var j = 0; j < n; j++) {
+                    aug[i][j] = A[i][j];
+                }
+                aug[i][n] = b[i];
+            }
+            
+            for (var i = 0; i < n; i++) {
+                var maxRow = i;
+                for (var r = i + 1; r < n; r++) {
+                    if (Math.abs(aug[r][i]) > Math.abs(aug[maxRow][i])) {
+                        maxRow = r;
+                    }
+                }
+                [aug[i], aug[maxRow]] = [aug[maxRow], aug[i]];
+                
+                var piv = aug[i][i];
+                if (Math.abs(piv) < 1e-10) continue;
+                
+                for (var r = 0; r < n; r++) {
+                    if (r !== i) {
+                        var factor = aug[r][i] / piv;
+                        for (var c = i; c <= n; c++) {
+                            aug[r][c] -= factor * aug[i][c];
+                        }
+                    }
+                }
+            }
+            
+            var x = [];
+            for (var i = 0; i < n; i++) {
+                x[i] = aug[i][n] / aug[i][i];
+            }
+            return x;
+        }
+        
+        function linearRegression(X, y) {
+            var Xt = matrixTranspose(X);
+            var XtX = matrixMultiply(Xt, X);
+            var Xty = matrixMultiply(Xt, [y])[0];
+            return solveLinearSystem(XtX, Xty);
+        }
+        
+        function polyfit(x, y, order) {
+            var n = x.length;
+            var k = order + 1;
+            var X = [];
+            for (var i = 0; i < n; i++) {
+                X[i] = [];
+                for (var j = 0; j < k; j++) {
+                    X[i][j] = Math.pow(x[i], order - j);
+                }
+            }
+            var Xt = matrixTranspose(X);
+            var XtX = matrixMultiply(Xt, X);
+            var Xty = matrixMultiply(Xt, [y])[0];
+            return solveLinearSystem(XtX, Xty);
+        }
+        
+        function polyval(coef, x) {
+            var result = 0;
+            for (var i = 0; i < coef.length; i++) {
+                result += coef[i] * Math.pow(x, coef.length - 1 - i);
+            }
+            return result;
+        }
+        
+        function predict() {
+            try {
+            var rainfall = parseList(document.getElementById('rainfall').value);
+            var avg_temp = parseList(document.getElementById('avg_temp').value);
+            var max_temp = parseList(document.getElementById('max_temp').value);
+            var surma = parseList(document.getElementById('surma').value);
+            var kushiyara = parseList(document.getElementById('kushiyara').value);
+            
+            if (rainfall.length !== 10 || avg_temp.length !== 10 || max_temp.length !== 10 || surma.length !== 10 || kushiyara.length !== 10) {
+                document.getElementById('error-msg').textContent = 'Please provide exactly 10 values for each field';
+                document.getElementById('error-msg').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('error-msg').classList.add('hidden');
+            
+            var years = [2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+            var X = [];
+            for (var i = 0; i < 10; i++) {
+                X[i] = [1, rainfall[i], avg_temp[i], max_temp[i]];
+            }
+            
+            var bSurma = linearRegression(X, surma);
+            var bKushi = linearRegression(X, kushiyara);
+            
+            var rFit = polyfit(years, rainfall, 1);
+            var avgFit = polyfit(years, avg_temp, 1);
+            var maxFit = polyfit(years, max_temp, 1);
+            
+            var futureYears = [2026, 2027];
+            var futureRainfall = futureYears.map(function(y) { return Math.round(polyval(rFit, y) * 100) / 100; });
+            var futureAvgTemp = futureYears.map(function(y) { return Math.round(polyval(avgFit, y) * 100) / 100; });
+            var futureMaxTemp = futureYears.map(function(y) { return Math.round(polyval(maxFit, y) * 100) / 100; });
+            
+            var predictions = [];
+            for (var i = 0; i < 2; i++) {
+                var x = [1, futureRainfall[i], futureAvgTemp[i], futureMaxTemp[i]];
+                var surmaVal = 0;
+                var kushiVal = 0;
+                for (var j = 0; j < 4; j++) {
+                    surmaVal += x[j] * bSurma[j];
+                    kushiVal += x[j] * bKushi[j];
+                }
+                surmaVal = Math.round(surmaVal * 100) / 100;
+                kushiVal = Math.round(kushiVal * 100) / 100;
+                predictions.push({
+                    year: futureYears[i],
+                    rainfall: futureRainfall[i],
+                    avgTemp: futureAvgTemp[i],
+                    maxTemp: futureMaxTemp[i],
+                    surma: surmaVal,
+                    kushi: kushiVal
+                });
+            }
+            
+            displayResults(years, rainfall, avg_temp, max_temp, surma, kushiyara, predictions);
+            } catch(e) {
+                alert('Error: ' + e.message + '\n' + e.stack);
+            }
+        }
+        
+        function displayResults(years, rainfall, avgTemp, maxTemp, surma, kushiyara, predictions) {
+            document.getElementById('input-form').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            
+            var predsDiv = document.getElementById('predictions');
+            var html = '';
+            for (var i = 0; i < predictions.length; i++) {
+                var p = predictions[i];
+                html += '<div class="prediction-box">' +
+                    '<h3>' + p.year + '</h3>' +
+                    '<div class="data-row"><span class="data-label">Rainfall</span><span class="data-value">' + p.rainfall + ' mm</span></div>' +
+                    '<div class="data-row"><span class="data-label">Avg Temp</span><span class="data-value">' + p.avgTemp + ' Â°C</span></div>' +
+                    '<div class="data-row"><span class="data-label">Max Temp</span><span class="data-value">' + p.maxTemp + ' Â°C</span></div>' +
+                    '<div class="data-row"><span class="data-label">Surma Level</span><span class="data-value">' + p.surma + ' m</span></div>' +
+                    '<div class="data-row"><span class="data-label">Kushiyara Level</span><span class="data-value">' + p.kushi + ' m</span></div>' +
+                    '<div class="data-row"><span class="data-label">Surma Risk</span><span class="data-value ' + (p.surma > 13 ? 'risk-high' : 'risk-low') + '">' + (p.surma > 13 ? 'HIGH' : 'LOW') + '</span></div>' +
+                    '<div class="data-row"><span class="data-label">Kushiyara Risk</span><span class="data-value ' + (p.kushi > 15 ? 'risk-high' : 'risk-low') + '">' + (p.kushi > 15 ? 'HIGH' : 'LOW') + '</span></div>' +
+                    '</div>';
+            }
+            predsDiv.innerHTML = html;
+            
+            var tableBody = document.querySelector('#history-table tbody');
+            var tableHtml = '';
+            for (var i = 0; i < years.length; i++) {
+                tableHtml += '<tr><td>' + years[i] + '</td><td>' + rainfall[i] + '</td><td>' + avgTemp[i] + '</td><td>' + maxTemp[i] + '</td><td>' + surma[i] + '</td><td>' + kushiyara[i] + '</td></tr>';
+            }
+            tableBody.innerHTML = tableHtml;
+            
+            var allYears = [...years, 2026, 2027];
+            var allRainfall = [...rainfall, ...predictions.map(function(p) { return p.rainfall; })];
+            var allAvgTemp = [...avgTemp, ...predictions.map(function(p) { return p.avgTemp; })];
+            var allSurma = [...surma, ...predictions.map(function(p) { return p.surma; })];
+            var allKushi = [...kushiyara, ...predictions.map(function(p) { return p.kushi; })];
+            
+            charts.forEach(function(c) { c.destroy(); });
+            charts = [];
+            
+            charts.push(new Chart(document.getElementById('rainfallChart'), {
+                type: 'line',
+                data: { labels: allYears, datasets: [{ label: 'Rainfall (mm)', data: allRainfall, borderColor: '#667eea', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            }));
+            
+            charts.push(new Chart(document.getElementById('tempChart'), {
+                type: 'line',
+                data: { labels: allYears, datasets: [{ label: 'Avg Temp (Â°C)', data: allAvgTemp, borderColor: '#e74c3c', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            }));
+            
+            charts.push(new Chart(document.getElementById('waterChart'), {
+                type: 'line',
+                data: { labels: allYears, datasets: [
+                    { label: 'Surma', data: allSurma, borderColor: '#3498db', fill: true, tension: 0.3 },
+                    { label: 'Kushiyara', data: allKushi, borderColor: '#27ae60', fill: true, tension: 0.3 }
+                ] },
+                options: { responsive: true, maintainAspectRatio: false }
+            }));
+            
+            window.scrollTo(0, 0);
+        }
+        
+        function showForm() {
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('input-form').classList.remove('hidden');
+            charts.forEach(function(c) { c.destroy(); });
+            charts = [];
+        }
+        
+        function runPredict() {
+            predict();
+        }
+    </script>
+</body>
+</html>
