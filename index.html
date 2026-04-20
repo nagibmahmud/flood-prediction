@@ -356,9 +356,13 @@
         async function fetchWeatherData() {
             var lat = document.getElementById('lat').value;
             var lon = document.getElementById('lon').value;
-            var cityName = '';
+            var startYear = parseInt(document.getElementById('api_start_year').value);
             var endYear = 2025;
-            var source = document.getElementById('dataSource').value;
+            
+            if (!lat || !lon) {
+                alert('Please enter latitude and longitude');
+                return;
+            }
             
             document.getElementById('api-loading').classList.remove('hidden');
             document.getElementById('api-result').innerHTML = '';
@@ -366,17 +370,15 @@
             var years = [], rainfall = [], avgTemp = [], maxTemp = [];
             
             try {
+                // Open-Meteo API (free, no key needed)
+                var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
+                    '&start_date=' + startYear + '-01-01&end_date=' + endYear + '-12-31&daily=precipitation_sum,temperature_2m_max,temperature_2m_mean&timezone=auto';
                 
-                    // Open-Meteo (default, free, no key needed)
-                    var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
-                        '&start_date=' + startYear + '-01-01&end_date=' + endYear + '-12-31&daily=precipitation_sum,temperature_2m_max,temperature_2m_mean&timezone=auto';
+                console.log('Fetching from:', url);
                 
-                    var response = await fetch(url);
-                    var data = await response.json();
+                var response = await fetch(url);
+                var data = await response.json();
                 
-                    console.log('API Response:', data);
-                
-                // Debug: show what's returned
                 console.log('API Response:', data);
                 
                 if (data.error) {
