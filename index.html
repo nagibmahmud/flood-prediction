@@ -198,7 +198,10 @@
             
             fetch(url)
                 .then(function(response) {
-                    msg.textContent = 'Response: ' + response.status;
+                    if (!response.ok) {
+                        msg.textContent = 'Error: HTTP ' + response.status;
+                        return;
+                    }
                     return response.json();
                 })
                 .then(function(r) { return r.json(); })
