@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Prediction System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: white; border-radius: 15px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; color: #444; margin-bottom: 8px; }
+        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; }
+        input[type="text"]:focus { outline: none; border-color: #667eea; }
+        .hint { font-size: 12px; color: #888; margin-top: 5px; }
+        .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn:hover { transform: translateY(-2px); }
+        .error { background: #fee; color: #c00; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        
+        .hidden { display: none; }
+        h2 { color: #444; margin: 30px 0 15px; }
+        .prediction-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .prediction-box { background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; }
+        .prediction-box h3 { color: #667eea; margin-bottom: 15px; }
+        .data-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .data-label { color: #666; }
+        .data-value { font-weight: 600; }
+        .risk-high { color: #e74c3c; font-weight: bold; }
+        .risk-low { color: #27ae60; font-weight: bold; }
+        .chart-container { position: relative; height: 300px; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #667eea; color: white; }
+        .btn-back { display: block; text-align: center; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" id="input-form">
+            <h1>Flood Prediction System</h1>
+            <p class="subtitle">Surma & Kushiyara River Basin (2016-2025)</p>
+            
+            <div id="error-msg" class="error hidden"></div>
+            
+            <form id="predict-form">
+                <div class="form-group">
+                    <label>Rainfall (mm) - 10 years (comma separated)</label>
+                    <input type="text" id="rainfall" value="4210, 5120, 3950, 4480, 4100, 3850, 5430, 4320, 5080, 4250">
+                    <p class="hint">Years 2016-2025</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Average Temperature (Â°C) - 10 years</label>
+                    <input type="text" id="avg_temp" value="25.8, 26.1, 25.9, 26.0, 25.7, 26.3, 26.5, 26.8, 26.4, 27.1">
+                </div>
+                
+                <div class="form-group">
+                    <label>Max Temperature (Â°C) - 10 years</label>
+                    <input type="text" id="max_temp" value="34.5, 35.0, 34.2, 34.2, 34.0, 36.1, 35.8, 37.2, 35.4, 36.8">
+                </div>
+                
+                <div class="form-group">
+                    <label>Surma Water Level (m) - 10 years</label>
+                    <input type="text" id="surma" value="11.45, 11.95, 10.80, 11.35, 11.10, 10.50, 13.00, 11.05, 12.45, 11.15">
+                </div>
+                
+                <div class="form-group">
+                    <label>Kushiyara Water Level (m) - 10 years</label>
+                    <input type="text" id="kushiyara" value="13.20, 14.10, 12.85, 13.50, 13.15, 12.40, 17.57, 13.10, 15.20, 13.35">
+                </div>
+                
+                <button type="submit" class="btn">Predict Flood Risk</button>
+            </form>
+        </div>
+        
+        <div class="card hidden" id="results">
+            <h1>Flood Prediction Results</h1>
+            
+            <h2>Predictions for 2026-2027</h2>
+            <div class="prediction-grid" id="predictions"></div>
+            
+            <h2>Rainfall Trend</h2>
+            <div class="chart-container"><canvas id="rainfallChart"></canvas></div>
+            
+            <h2>Temperature Trend</h2>
+            <div class="chart-container"><canvas id="tempChart"></canvas></div>
+            
+            <h2>Water Level Prediction</h2>
+            <div class="chart-container"><canvas id="waterChart"></canvas></div>
+            
+            <h2>Historical Data</h2>
+            <table id="history-table">
+                <thead>
+                    <tr><th>Year</th><th>Rainfall</th><th>Avg Temp</th><th>Max Temp</th><th>Surma</th><th>Kushiyara</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            
+            <a href="#" class="btn-back" onclick="showForm()">Back to Input</a>
+        </div>
+    </div>
+    
+    <script>
+        let charts = [];
+        
+        function parseList(str) {
+            return str.split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x));
+        }
+        
+        function polyfit(x, y, order) {
+            const n = x.length;
+            const k = order + 1;
+            const X = [];
+            for (let i = 0; i < n; i++) {
+                const row = [];
+                for (let j = 0; j < k; j++) row.push(Math.pow(x[i], order - j));
+                X.push(row);
+            }
+            const Xt = X[0].map((_, col) => X.map(row => row[col]));
+            const XtX = Xt.map((col, i) => Xt.map((col2, j) => col.reduce((s, v, k) => s + v * Xt[j][k], 0)));
+            const Xty = Xt.map(col => col.reduce((s, v, i) => s + v * y[i], 0));
+            
+            function gaussJordan(m, v) {
+                const n = m.length;
+                for (let i = 0; i < n; i++) {
+                    let piv = m[i][i], pr = i;
+                    for (let r = i + 1; r < n; r++) if (Math.abs(m[r][i]) > Math.abs(piv)) { piv = m[r][i]; pr = r; }
+                    [m[i], m[pr]] = [m[pr], m[i]]; [v[i], v[pr]] = [v[pr], v[i]];
+                    for (let r = 0; r < n; r++) if (r !== i) { const f = m[r][i] / piv; for (let c = i; c < n; c++) m[r][c] -= f * m[i][c]; v[r] -= f * v[i]; }
+                    for (let c = i; c < n; c++) m[i][c] /= piv; v[i] /= piv;
+                }
+                return v;
+            }
+            return gaussJordan(XtX.map(r => [...r]), [...Xty]);
+        }
+        
+        function polyval(coef, x) {
+            return coef.reduce((s, c, i) => s + c * Math.pow(x, coef.length - 1 - i), 0);
+        }
+        
+        function linearRegression(X, y) {
+            const n = X.length, k = X[0].length;
+            const Xt = X[0].map((_, j) => X.map(r => r[j]));
+            const XtX = Xt.map((col, i) => Xt.map((col2, j) => col.reduce((s, v, r) => s + v * Xt[j][r], 0))));
+            const Xty = Xt.map(col => col.reduce((s, v, i) => s + v * y[i], 0));
+            
+            function gaussJordan(m, v) {
+                const n = m.length;
+                for (let i = 0; i < n; i++) {
+                    let piv = m[i][i], pr = i;
+                    for (let r = i + 1; r < n; r++) if (Math.abs(m[r][i]) > Math.abs(piv)) { piv = m[r][i]; pr = r; }
+                    [m[i], m[pr]] = [m[pr], m[i]]; [v[i], v[pr]] = [v[pr], v[i]];
+                    for (let r = 0; r < n; r++) if (r !== i) { const f = m[r][i] / piv; for (let c = i; c < n; c++) m[r][c] -= f * m[i][c]; v[r] -= f * v[i]; }
+                    for (let c = i; c < n; c++) m[i][c] /= piv; v[i] /= piv;
+                }
+                return v;
+            }
+            return gaussJordan(XtX.map(r => [...r]), [...Xty]);
+        }
+        
+        function predict() {
+            const rainfall = parseList(document.getElementById('rainfall').value);
+            const avg_temp = parseList(document.getElementById('avg_temp').value);
+            const max_temp = parseList(document.getElementById('max_temp').value);
+            const surma = parseList(document.getElementById('surma').value);
+            const kushiyara = parseList(document.getElementById('kushiyara').value);
+            
+            if (rainfall.length !== 10 || avg_temp.length !== 10 || max_temp.length !== 10 || surma.length !== 10 || kushiyara.length !== 10) {
+                document.getElementById('error-msg').textContent = 'Please provide exactly 10 values for each field';
+                document.getElementById('error-msg').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('error-msg').classList.add('hidden');
+            
+            const years = [2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+            const X = rainfall.map((r, i) => [1, r, avg_temp[i], max_temp[i]]);
+            
+            const bSurma = linearRegression(X, surma);
+            const bKushi = linearRegression(X, kushiyara);
+            
+            const rFit = polyfit(years, rainfall, 1);
+            const avgFit = polyfit(years, avg_temp, 1);
+            const maxFit = polyfit(years, max_temp, 1);
+            
+            const futureYears = [2026, 2027];
+            const futureRainfall = futureYears.map(y => Math.round(polyval(rFit, y) * 100) / 100);
+            const futureAvgTemp = futureYears.map(y => Math.round(polyval(avgFit, y) * 100) / 100);
+            const futureMaxTemp = futureYears.map(y => Math.round(polyval(maxFit, y) * 100) / 100);
+            
+            const predictions = futureYears.map((fy, i) => {
+                const x = [1, futureRainfall[i], futureAvgTemp[i], futureMaxTemp[i]];
+                const surmaVal = Math.round(x.reduce((s, v, j) => s + v * bSurma[j], 0) * 100) / 100;
+                const kushiVal = Math.round(x.reduce((s, v, j) => s + v * bKushi[j], 0) * 100) / 100;
+                return { year: fy, rainfall: futureRainfall[i], avgTemp: futureAvgTemp[i], maxTemp: futureMaxTemp[i], surma: surmaVal, kushi: kushiVal };
+            });
+            
+            displayResults(years, rainfall, avg_temp, max_temp, surma, kushiyara, predictions);
+        }
+        
+        function displayResults(years, rainfall, avgTemp, maxTemp, surma, kushiyara, predictions) {
+            document.getElementById('input-form').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            
+            const predsDiv = document.getElementById('predictions');
+            predsDiv.innerHTML = predictions.map(p => `
+                <div class="prediction-box">
+                    <h3>${p.year}</h3>
+                    <div class="data-row"><span class="data-label">Rainfall</span><span class="data-value">${p.rainfall} mm</span></div>
+                    <div class="data-row"><span class="data-label">Avg Temp</span><span class="data-value">${p.avgTemp} Â°C</span></div>
+                    <div class="data-row"><span class="data-label">Max Temp</span><span class="data-value">${p.maxTemp} Â°C</span></div>
+                    <div class="data-row"><span class="data-label">Surma Level</span><span class="data-value">${p.surma} m</span></div>
+                    <div class="data-row"><span class="data-label">Kushiyara Level</span><span class="data-value">${p.kushi} m</span></div>
+                    <div class="data-row"><span class="data-label">Surma Risk</span><span class="data-value ${p.surma > 13 ? 'risk-high' : 'risk-low'}">${p.surma > 13 ? 'HIGH' : 'LOW'}</span></div>
+                    <div class="data-row"><span class="data-label">Kushiyara Risk</span><span class="data-value ${p.kushi > 15 ? 'risk-high' : 'risk-low'}">${p.kushi > 15 ? 'HIGH' : 'LOW'}</span></div>
+                </div>
+            `).join('');
+            
+            const tableBody = document.querySelector('#history-table tbody');
+            tableBody.innerHTML = years.map((y, i) => `
+                <tr><td>${y}</td><td>${rainfall[i]}</td><td>${avgTemp[i]}</td><td>${maxTemp[i]}</td><td>${surma[i]}</td><td>${kushiyara[i]}</td></tr>
+            `).join('');
+            
+            const allYears = [...years, 2026, 2027];
+            const allRainfall = [...rainfall, ...predictions.map(p => p.rainfall)];
+            const allAvgTemp = [...avgTemp, ...predictions.map(p => p.avgTemp)];
+            const allSurma = [...surma, ...predictions.map(p => p.surma)];
+            const allKushi = [...kushiyara, ...predictions.map(p => p.kushi)];
+            
+            charts.forEach(c => c.destroy());
+            charts = [];
+            
+            charts.push(new Chart(document.getElementById('rainfallChart'), {
+                type: 'line',
+                data: { labels: allYears, datasets: [{ label: 'Rainfall (mm)', data: allRainfall, borderColor: '#667eea', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            }));
+            
+            charts.push(new Chart(document.getElementById('tempChart'), {
+                type: 'line',
+                data: { labels: allYears, datasets: [{ label: 'Avg Temp (Â°C)', data: allAvgTemp, borderColor: '#e74c3c', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            }));
+            
+            charts.push(new Chart(document.getElementById('waterChart'), {
+                type: 'line',
+                data: { labels: allYears, datasets: [
+                    { label: 'Surma', data: allSurma, borderColor: '#3498db', fill: true, tension: 0.3 },
+                    { label: 'Kushiyara', data: allKushi, borderColor: '#27ae60', fill: true, tension: 0.3 }
+                ] },
+                options: { responsive: true, maintainAspectRatio: false }
+            }));
+            
+            window.scrollTo(0, 0);
+        }
+        
+        function showForm() {
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('input-form').classList.remove('hidden');
+            charts.forEach(c => c.destroy());
+            charts = [];
+        }
+        
+        document.getElementById('predict-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            predict();
+        });
+    </script>
+</body>
+</html>
