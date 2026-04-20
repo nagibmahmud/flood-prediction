@@ -129,8 +129,64 @@
             
             <div id="api-tab" class="hidden">
                 <div class="info-box">
-                    <h4>ðŸŒ Fetch Data from Open-Meteo API</h4>
-                    <p>This will fetch historical weather data from Open-Meteo (free, no API key needed) for Sylhet, Bangladesh.</p>
+                    <h4>ðŸŒ Fetch Historical Weather Data</h4>
+                    <p>Select your location and click "Fetch Weather Data"</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>ðŸ“ Select Location</label>
+                    <select id="locationPreset" onchange="updateLocation()">
+                        <option value="sylhet">Sylhet (24.8918, 91.8697)</option>
+                        <option value="sylhetcity">Sylhet City (24.9045, 91.8611)</option>
+                        <option value="moulvibazar">Moulvibazar (24.4829, 91.7703)</option>
+                        <option value="habiganj">Habiganj (24.3745, 91.4155)</option>
+                        <option value="sunamganj">Sunamganj (25.0667, 91.4000)</option>
+                        <option value="custom">Custom Location</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="customLocation" style="display:none;">
+                    <label>Custom Coordinates</label>
+                    <div class="location-group">
+                        <input type="text" id="lat" value="24.8918" placeholder="Latitude">
+                        <input type="text" id="lon" value="91.8697" placeholder="Longitude">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>ðŸ“… Start Year</label>
+                    <input type="number" id="api_start_year" value="2020" min="2015" max="2025">
+                    <p class="hint">Note: Start from 2020 for best results</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Data Source</label>
+                    <select id="dataSource" onchange="updateApiFields()">
+                        <option value="openmeteo">Open-Meteo (Recommended)</option>
+                        <option value="visualcrossing">Visual Crossing</option>
+                        <option value="openweather">OpenWeather (Historical)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Select Location (Bangladesh)</label>
+                    <select id="locationPreset" onchange="updateLocation()">
+                        <option value="sylhet">Sylhet (24.8918, 91.8697)</option>
+                        <option value="sylhetcity">Sylhet City (24.9045, 91.8611)</option>
+                        <option value="moulvibazar">Moulvibazar (24.4829, 91.7703)</option>
+                        <option value="habiganj">Habiganj (24.3745, 91.4155)</option>
+                        <option value="sunamganj">Sunamganj (25.0667, 91.4000)</option>
+                        <option value="custom">Custom Location</option>
+                    </select>
+                </div>
+                
+                <input type="hidden" id="lat" value="24.8918">
+                <input type="hidden" id="lon" value="91.8697">
+                
+                <div class="form-group">
+                    <label>Start Year</label>
+                    <input type="number" id="api_start_year" value="2020" min="2015" max="2025">
+                    <p class="hint">Note: Most data available from 2020 onwards</p>
                 </div>
                 
                 <div class="form-group">
@@ -221,6 +277,42 @@
             }
         }
         
+        function updateLocation() {
+            var preset = document.getElementById('locationPreset').value;
+            var locations = {
+                'sylhet': {lat: '24.8918', lon: '91.8697'},
+                'sylhetcity': {lat: '24.9045', lon: '91.8611'},
+                'moulvibazar': {lat: '24.4829', lon: '91.7703'},
+                'habiganj': {lat: '24.3745', lon: '91.4155'},
+                'sunamganj': {lat: '25.0667', lon: '91.4000'}
+            };
+            
+            if (preset === 'custom') {
+                document.getElementById('customLocation').style.display = 'block';
+            } else {
+                document.getElementById('customLocation').style.display = 'none';
+                document.getElementById('lat').value = locations[preset].lat;
+                document.getElementById('lon').value = locations[preset].lon;
+            }
+        }
+        
+        function updateApiFields() {
+            var source = document.getElementById('dataSource').value;
+            var startYear = document.getElementById('api_start_year');
+            var hint = startYear.nextElementSibling;
+            
+            if (source === 'visualcrossing') {
+                startYear.value = '2019';
+                hint.textContent = 'Data available from 2019 onwards';
+            } else if (source === 'openweather') {
+                startYear.value = '2015';
+                hint.textContent = 'Data available from 2015 onwards';
+            } else {
+                startYear.value = '2020';
+                hint.textContent = 'Most data available from 2020 onwards';
+            }
+        }
+        
         function parseList(str) {
             if (!str) return [];
             var arr = str.split(',');
@@ -264,19 +356,25 @@
         async function fetchWeatherData() {
             var lat = document.getElementById('lat').value;
             var lon = document.getElementById('lon').value;
-            var startYear = parseInt(document.getElementById('api_start_year').value);
+            var cityName = '';
             var endYear = 2025;
+            var source = document.getElementById('dataSource').value;
             
             document.getElementById('api-loading').classList.remove('hidden');
             document.getElementById('api-result').innerHTML = '';
             
+            var years = [], rainfall = [], avgTemp = [], maxTemp = [];
+            
             try {
-                // Using Open-Meteo Historical Weather API
-                var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
-                    '&start_date=' + startYear + '-01-01&end_date=' + endYear + '-12-31&daily=precipitation_sum,temperature_2m_max,temperature_2m_mean&timezone=auto';
                 
-                var response = await fetch(url);
-                var data = await response.json();
+                    // Open-Meteo (default, free, no key needed)
+                    var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
+                        '&start_date=' + startYear + '-01-01&end_date=' + endYear + '-12-31&daily=precipitation_sum,temperature_2m_max,temperature_2m_mean&timezone=auto';
+                
+                    var response = await fetch(url);
+                    var data = await response.json();
+                
+                    console.log('API Response:', data);
                 
                 // Debug: show what's returned
                 console.log('API Response:', data);
@@ -287,7 +385,8 @@
                     return;
                 }
                 
-                if (data.daily && data.daily.time) {
+                var daily = data.daily;
+                if (daily && daily.time) {
                     var years = [];
                     var rainfall = [];
                     var avgTemp = [];
@@ -314,17 +413,34 @@ if (daily.precipitation_sum && daily.precipitation_sum[i] !== null && daily.prec
                                 yearlyAvgTemp[year].push(daily.temperature_2m_mean[i]);
                             }
                             if (daily.temperature_2m_max && daily.temperature_2m_max[i] !== null && daily.temperature_2m_max[i] !== undefined) {
-                                yearlyMaxTemp[year].push(daily.temperature_2m_max[i]);
+yearlyMaxTemp[year].push(daily.temperature_2m_max[i]);
                             }
+                        }
                     }
                     
-                    for (var year = startYear; year <= endYear; year++) {
-                        if (yearlyRainfall[year] && yearlyRainfall[year].length > 0) {
-                            years.push(year);
+                    years.sort();
+                    
+for (var i = 0; i < years.length; i++) {
+                        var y = years[i];
+                        if (yearlyRainfall[y] && yearlyRainfall[y].length > 0) {
                             var total = 0;
-                            for (var r = 0; r < yearlyRainfall[year].length; r++) {
-                                total += yearlyRainfall[year][r];
+                            for (var r = 0; r < yearlyRainfall[y].length; r++) {
+                                total += yearlyRainfall[y][r];
                             }
+                            rainfall.push(Math.round(total));
+                            
+                            var sumTemp = 0;
+                            for (var t = 0; t < yearlyAvgTemp[y].length; t++) {
+                                sumTemp += yearlyAvgTemp[y][t];
+                            }
+                            avgTemp.push(Math.round(sumTemp / yearlyAvgTemp[y].length * 10) / 10);
+                            
+                            var maxSum = 0;
+                            for (var m = 0; m < yearlyMaxTemp[y].length; m++) {
+                                maxSum += yearlyMaxTemp[y][m];
+                            }
+                            maxTemp.push(Math.round(maxSum / yearlyMaxTemp[y].length * 10) / 10);
+                        }
                             rainfall.push(Math.round(total));
                             
                             var sumTemp = 0;
