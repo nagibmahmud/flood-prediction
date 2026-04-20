@@ -156,7 +156,7 @@
                     <input type="number" id="startYearInput" value="2020">
                 </div>
                 
-                <button type="button" class="btn btn-secondary" onclick="fetchWeatherData()">Fetch Weather Data</button>
+                <button type="button" class="btn btn-secondary" id="testBtn">Test Button</button>
                 
                 <p id="fetchStatus"></p>
                 
@@ -427,11 +427,6 @@ function fetchWeatherData() {
                     document.getElementById('fetchStatus').innerHTML = 'Error: ' + err.message;
                 });
         }
-            
-            var startYear = parseInt(document.getElementById('api_start_year').value);
-            var endYear = 2025;
-            
-            if (!lat || !lon || lat === '' || lon === '') {
                 alert('Please select a location');
                 return;
             }
@@ -687,6 +682,10 @@ for (var i = 0; i < years.length; i++) {
             document.getElementById('kushiyara').value = '';
             document.getElementById('years').value = '';
         }
+        
+        // Add click handler for test button
+        document.getElementById('testBtn').onclick = fetchWeatherData;
+        document.getElementById('testBtn').textContent = 'Fetch Weather Data';
     </script>
 </body>
 </html>
