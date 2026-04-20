@@ -130,37 +130,35 @@
             <div id="api-tab" class="hidden">
                 <div class="info-box">
                     <h4>ðŸŒ Fetch Historical Weather Data</h4>
-                    <p>Select your location and click "Fetch Weather Data"</p>
+                    <p>Select location and click fetch</p>
                 </div>
                 
                 <div class="form-group">
-                    <label>ðŸ“ Select Location</label>
-                    <select id="locationPreset" onchange="updateLocation()">
-                        <option value="sylhet">Sylhet (24.8918, 91.8697)</option>
-                        <option value="sylhetcity">Sylhet City (24.9045, 91.8611)</option>
-                        <option value="moulvibazar">Moulvibazar (24.4829, 91.7703)</option>
-                        <option value="habiganj">Habiganj (24.3745, 91.4155)</option>
-                        <option value="sunamganj">Sunamganj (25.0667, 91.4000)</option>
-                        <option value="custom">Custom Location</option>
+                    <label>Select Location</label>
+                    <select id="locationSelector">
+                        <option value="sylhet">Sylhet</option>
+                        <option value="sylhetcity">Sylhet City</option>
+                        <option value="moulvibazar">Moulvibazar</option>
+                        <option value="habiganj">Habiganj</option>
+                        <option value="sunamganj">Sunamganj</option>
+                        <option value="custom">Custom</option>
                     </select>
                 </div>
                 
-                <div class="form-group" id="customLocationDiv" style="display:none;">
-                    <label>Custom Coordinates</label>
-                    <div class="location-group">
-                        <input type="text" id="api_lat" value="24.8918" placeholder="Latitude">
-                        <input type="text" id="api_lon" value="91.8697" placeholder="Longitude">
-                    </div>
+                <div class="form-group" id="customLocDiv" style="display:none;">
+                    <label>Lat, Lon</label>
+                    <input type="text" id="customLat" placeholder="24.8918">
+                    <input type="text" id="customLon" placeholder="91.8697">
                 </div>
-                
-                <input type="hidden" id="hidden_lat" value="24.8918">
-                <input type="hidden" id="hidden_lon" value="91.8697">
                 
                 <div class="form-group">
-                    <label>ðŸ“… Start Year</label>
-                    <input type="number" id="api_start_year" value="2020" min="2015" max="2025">
-                    <p class="hint">Note: Start from 2020 for best results</p>
+                    <label>Start Year</label>
+                    <input type="number" id="startYearInput" value="2020">
                 </div>
+                
+                <button type="button" class="btn btn-secondary" onclick="fetchWeatherData()">Fetch Weather Data</button>
+                
+                <p id="fetchStatus"></p>
                 
                 <div class="form-group">
                     <label>Location</label>
@@ -250,6 +248,17 @@
             }
         }
         
+        function onLocationChange() {
+            var sel = document.getElementById('locationSelector');
+            if (sel.value === 'custom') {
+                document.getElementById('customLocDiv').style.display = 'block';
+            } else {
+                document.getElementById('customLocDiv').style.display = 'none';
+            }
+        }
+        
+        document.getElementById('locationSelector').addEventListener('change', onLocationChange);
+        
         function updateLocation() {
             var preset = document.getElementById('locationPreset').value;
             var locations = {
@@ -326,18 +335,98 @@
             return mean(y) - m * mean(x);
         }
         
-        async function fetchWeatherData() {
-            alert('Button clicked!');
-            var preset = document.getElementById('locationPreset').value;
+function fetchWeatherData() {
+            var locationSelect = document.getElementById('locationSelector');
+            var preset = locationSelect.value;
             var lat, lon;
             
+            var locations = {
+                'sylhet': '24.8918,91.8697',
+                'sylhetcity': '24.9045,91.8611',
+                'moulvibazar': '24.4829,91.7703',
+                'habiganj': '24.3745,91.4155',
+                'sunamganj': '25.0667,91.4000'
+            };
+            
             if (preset === 'custom') {
-                lat = document.getElementById('api_lat').value;
-                lon = document.getElementById('api_lon').value;
+                lat = document.getElementById('customLat').value;
+                lon = document.getElementById('customLon').value;
             } else {
-                lat = document.getElementById('hidden_lat').value;
-                lon = document.getElementById('hidden_lon').value;
+                var coords = locations[preset].split(',');
+                lat = coords[0];
+                lon = coords[1];
             }
+            
+            var startYear = parseInt(document.getElementById('startYearInput').value);
+            
+            document.getElementById('fetchStatus').innerHTML = 'Loading...';
+            
+            var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
+                '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_max,temperature_2m_mean&timezone=auto';
+            
+            fetch(url)
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.error) {
+                        document.getElementById('fetchStatus').innerHTML = 'Error: ' + data.error;
+                        return;
+                    }
+                    
+                    if (data.daily && data.daily.time) {
+                        var daily = data.daily;
+                        var dates = daily.time;
+                        
+                        var yearlyRain = {};
+                        var yearlyAvg = {};
+                        var yearlyMax = {};
+                        var yearList = [];
+                        
+                        for (var i = 0; i < dates.length; i++) {
+                            var year = parseInt(dates[i].substring(0, 4));
+                            if (yearList.indexOf(year) === -1) {
+                                yearList.push(year);
+                                yearlyRain[year] = 0;
+                                yearlyAvg[year] = [];
+                                yearlyMax[year] = [];
+                            }
+                            if (daily.precipitation_sum[i]) yearlyRain[year] += daily.precipitation_sum[i];
+                            if (daily.temperature_2m_mean[i]) yearlyAvg[year].push(daily.temperature_2m_mean[i]);
+                            if (daily.temperature_2m_max[i]) yearlyMax[year].push(daily.temperature_2m_max[i]);
+                        }
+                        
+                        yearList.sort();
+                        
+                        var yearsStr = [];
+                        var rainStr = [];
+                        var avgStr = [];
+                        var maxStr = [];
+                        
+                        for (var j = 0; j < yearList.length; j++) {
+                            var y = yearList[j];
+                            yearsStr.push(y);
+                            rainStr.push(Math.round(yearlyRain[y]));
+                            
+                            var avgSum = yearlyAvg[y].reduce(function(a,b) { return a + b; }, 0);
+                            avgStr.push(Math.round(avgSum / yearlyAvg[y].length * 10) / 10);
+                            
+                            var maxSum = yearlyMax[y].reduce(function(a,b) { return a + b; }, 0);
+                            maxStr.push(Math.round(maxSum / yearlyMax[y].length * 10) / 10);
+                        }
+                        
+                        document.getElementById('years').value = yearsStr.join(',');
+                        document.getElementById('rainfall').value = rainStr.join(', ');
+                        document.getElementById('avg_temp').value = avgStr.join(', ');
+                        document.getElementById('max_temp').value = maxStr.join(', ');
+                        
+                        document.getElementById('fetchStatus').innerHTML = 'âœ… Loaded ' + yearsStr.length + ' years!';
+                    } else {
+                        document.getElementById('fetchStatus').innerHTML = 'âŒ No data found';
+                    }
+                })
+                .catch(function(err) {
+                    document.getElementById('fetchStatus').innerHTML = 'Error: ' + err.message;
+                });
+        }
             
             var startYear = parseInt(document.getElementById('api_start_year').value);
             var endYear = 2025;
