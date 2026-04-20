@@ -144,7 +144,8 @@
                 
                 <div class="form-group">
                     <label>Start Year</label>
-                    <input type="number" id="api_start_year" value="2016" min="2000" max="2025">
+                    <input type="number" id="api_start_year" value="2020" min="2000" max="2025">
+                    <p class="hint">Note: Most data available from 2020 onwards</p>
                 </div>
                 
                 <button type="button" class="btn btn-secondary" onclick="fetchWeatherData()">ðŸŒ¥ï¸ Fetch Weather Data</button>
@@ -270,13 +271,23 @@
             document.getElementById('api-result').innerHTML = '';
             
             try {
+                // Using Open-Meteo Historical Weather API
                 var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
-                    '&start_date=' + startYear + '-01-01&end_date=' + endYear + '-12-31&daily=precipitation_sum,temperature_2m_mean_max,temperature_2m_mean&timezone=Asia/Dhaka';
+                    '&start_date=' + startYear + '-01-01&end_date=' + endYear + '-12-31&daily=precipitation_sum,temperature_2m_max,temperature_2m_mean&timezone=auto';
                 
                 var response = await fetch(url);
                 var data = await response.json();
                 
-                if (data.daily) {
+                // Debug: show what's returned
+                console.log('API Response:', data);
+                
+                if (data.error) {
+                    document.getElementById('api-result').innerHTML = '<p style="color: red;">âŒ API Error: ' + data.error + '</p>';
+                    document.getElementById('api-loading').classList.add('hidden');
+                    return;
+                }
+                
+                if (data.daily && data.daily.time) {
                     var years = [];
                     var rainfall = [];
                     var avgTemp = [];
@@ -296,15 +307,15 @@
                             yearlyAvgTemp[year] = [];
                             yearlyMaxTemp[year] = [];
                         }
-                        if (daily.precipitation_sum && daily.precipitation_sum[i]) {
-                            yearlyRainfall[year].push(daily.precipitation_sum[i]);
-                        }
-                        if (daily.temperature_2m_mean && daily.temperature_2m_mean[i]) {
-                            yearlyAvgTemp[year].push(daily.temperature_2m_mean[i]);
-                        }
-                        if (daily.temperature_2m_mean_max && daily.temperature_2m_mean_max[i]) {
-                            yearlyMaxTemp[year].push(daily.temperature_2m_mean_max[i]);
-                        }
+if (daily.precipitation_sum && daily.precipitation_sum[i] !== null && daily.precipitation_sum[i] !== undefined) {
+                                yearlyRainfall[year].push(daily.precipitation_sum[i]);
+                            }
+                            if (daily.temperature_2m_mean && daily.temperature_2m_mean[i] !== null && daily.temperature_2m_mean[i] !== undefined) {
+                                yearlyAvgTemp[year].push(daily.temperature_2m_mean[i]);
+                            }
+                            if (daily.temperature_2m_max && daily.temperature_2m_max[i] !== null && daily.temperature_2m_max[i] !== undefined) {
+                                yearlyMaxTemp[year].push(daily.temperature_2m_max[i]);
+                            }
                     }
                     
                     for (var year = startYear; year <= endYear; year++) {
