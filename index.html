@@ -3,115 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flood Prediction System</title>
+    <title>Flood Prediction System - Surma & Kushiyara River Basin</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
+        .container { max-width: 1000px; margin: 0 auto; }
         .card { background: white; border-radius: 15px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-        h1 { text-align: center; color: #333; margin-bottom: 10px; }
+        h1 { text-align: center; color: #333; margin-bottom: 10px; font-size: 28px; }
+        h2 { color: #444; margin: 25px 0 15px; font-size: 20px; }
+        h3 { color: #555; margin-bottom: 10px; }
         .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: 600; color: #444; margin-bottom: 8px; }
-        input[type="text"], input[type="number"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; }
         input:focus { outline: none; border-color: #667eea; }
         .hint { font-size: 12px; color: #888; margin-top: 5px; }
-        .btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        
+        .btn { padding: 14px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
         .btn:hover { transform: translateY(-2px); }
+        .btn-secondary { background: #6c757d; }
+        .btn-small { padding: 10px 20px; font-size: 14px; }
+        
         .hidden { display: none; }
-        h2 { color: #444; margin: 30px 0 15px; }
+        
+        .data-section { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .data-section h3 { border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        
         .prediction-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
         .prediction-box { background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; }
-        .prediction-box h3 { color: #667eea; margin-bottom: 15px; }
-        .data-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .prediction-box.warning { border-left-color: #ffc107; }
+        .prediction-box.danger { border-left-color: #dc3545; }
+        .prediction-box.success { border-left-color: #27ae60; }
+        
+        .data-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .data-row:last-child { border-bottom: none; }
         .data-label { color: #666; }
         .data-value { font-weight: 600; }
-        .risk-high { color: #e74c3c; font-weight: bold; }
+        
+        .risk-high { color: #dc3545; font-weight: bold; }
         .risk-low { color: #27ae60; font-weight: bold; }
+        .risk-medium { color: #ffc107; font-weight: bold; }
+        
         .chart-container { position: relative; height: 300px; margin: 20px 0; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background: #667eea; color: white; }
-        .btn-back { display: block; text-align: center; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px; }
-        .year-input-group { display: flex; gap: 10px; align-items: center; }
-        .year-input-group input { flex: 1; }
+        tr:hover { background: #f8f9fa; }
+        
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab { padding: 12px 24px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .tab.active { border-bottom-color: #667eea; color: #667eea; }
+        
+        .btn-back { display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; margin-top: 20px; }
+        
+        .location-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .location-group input { flex: 1; }
+        
+        .loading { text-align: center; padding: 20px; color: #666; }
+        .loading::after { content: '...'; animation: dots 1s infinite; }
+        
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        
+        .info-box { background: #e7f3ff; border: 1px solid #b3d7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .info-box h4 { color: #004085; margin-bottom: 10px; }
+        .info-box p { color: #004085; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card" id="input-form">
             <h1>Flood Prediction System</h1>
-            <p class="subtitle">Surma & Kushiyara River Basin</p>
+            <p class="subtitle">Surma & Kushiyara River Basin, Sylhet, Bangladesh</p>
             
-            <form id="predict-form">
-                <div class="form-group">
-                    <label>Historical Data - Rainfall (mm)</label>
-                    <input type="text" id="rainfall" value="4210, 5120, 3950, 4480, 4100, 3850, 5430, 4320, 5080, 4250">
-                    <p class="hint">Enter rainfall values separated by commas</p>
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('manual')">Manual Input</div>
+                <div class="tab" onclick="showTab('api')">Fetch from API</div>
+            </div>
+            
+            <div id="manual-tab">
+                <div class="data-section">
+                    <h3>Historical Weather Data</h3>
+                    <p class="hint">Enter historical data (comma separated, oldest to newest)</p>
+                    
+                    <div class="form-group">
+                        <label>Years of Data (e.g., 2016,2017,...2025)</label>
+                        <input type="text" id="years" value="2016,2017,2018,2019,2020,2021,2022,2023,2024,2025">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Rainfall (mm)</label>
+                        <input type="text" id="rainfall" value="4210, 5120, 3950, 4480, 4100, 3850, 5430, 4320, 5080, 4250">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Average Temperature (Â°C)</label>
+                        <input type="text" id="avg_temp" value="25.8, 26.1, 25.9, 26.0, 25.7, 26.3, 26.5, 26.8, 26.4, 27.1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Maximum Temperature (Â°C)</label>
+                        <input type="text" id="max_temp" value="34.5, 35.0, 34.2, 34.2, 34.0, 36.1, 35.8, 37.2, 35.4, 36.8">
+                    </div>
+                </div>
+                
+                <div class="data-section">
+                    <h3>Historical River Water Level</h3>
+                    <div class="form-group">
+                        <label>Surma River Water Level (meters)</label>
+                        <input type="text" id="surma" value="11.45, 11.95, 10.80, 11.35, 11.10, 10.50, 13.00, 11.05, 12.45, 11.15">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Kushiyara River Water Level (meters)</label>
+                        <input type="text" id="kushiyara" value="13.20, 14.10, 12.85, 13.50, 13.15, 12.40, 17.57, 13.10, 15.20, 13.35">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="api-tab" class="hidden">
+                <div class="info-box">
+                    <h4>ðŸŒ Fetch Data from Open-Meteo API</h4>
+                    <p>This will fetch historical weather data from Open-Meteo (free, no API key needed) for Sylhet, Bangladesh.</p>
                 </div>
                 
                 <div class="form-group">
-                    <label>Historical Data - Average Temperature (Â°C)</label>
-                    <input type="text" id="avg_temp" value="25.8, 26.1, 25.9, 26.0, 25.7, 26.3, 26.5, 26.8, 26.4, 27.1">
+                    <label>Location</label>
+                    <div class="location-group">
+                        <input type="text" id="lat" value="24.8918" placeholder="Latitude">
+                        <input type="text" id="lon" value="91.8697" placeholder="Longitude">
+                    </div>
+                    <p class="hint">Default: Sylhet, Bangladesh (24.8918, 91.8697)</p>
                 </div>
                 
                 <div class="form-group">
-                    <label>Historical Data - Max Temperature (Â°C)</label>
-                    <input type="text" id="max_temp" value="34.5, 35.0, 34.2, 34.2, 34.0, 36.1, 35.8, 37.2, 35.4, 36.8">
+                    <label>Start Year</label>
+                    <input type="number" id="api_start_year" value="2016" min="2000" max="2025">
                 </div>
                 
-                <div class="form-group">
-                    <label>Historical Data - Surma Water Level (m)</label>
-                    <input type="text" id="surma" value="11.45, 11.95, 10.80, 11.35, 11.10, 10.50, 13.00, 11.05, 12.45, 11.15">
-                </div>
+                <button type="button" class="btn btn-secondary" onclick="fetchWeatherData()">ðŸŒ¥ï¸ Fetch Weather Data</button>
                 
+                <div id="api-loading" class="loading hidden">Loading data</div>
+                <div id="api-result"></div>
+            </div>
+            
+            <div class="data-section">
+                <h3>Prediction Settings</h3>
                 <div class="form-group">
-                    <label>Historical Data - Kushiyara Water Level (m)</label>
-                    <input type="text" id="kushiyara" value="13.20, 14.10, 12.85, 13.50, 13.15, 12.40, 17.57, 13.10, 15.20, 13.35">
-                </div>
-                
-                <div class="form-group">
-                    <label>Year of Prediction</label>
+                    <label>Year to Predict</label>
                     <input type="number" id="predictYear" value="2027" min="2026" max="2050">
                     <p class="hint">Enter the year you want to predict flood risk for</p>
                 </div>
                 
-                <button type="button" class="btn" onclick="predict()">Predict Flood Risk</button>
-            </form>
+                <div class="form-group">
+                    <label>Flood Threshold - Surma River (m)</label>
+                    <input type="number" id="surma_threshold" value="13" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label>Flood Threshold - Kushiyara River (m)</label>
+                    <input type="number" id="kushiyara_threshold" value="15" step="0.1">
+                </div>
+            </div>
+            
+            <button type="button" class="btn" onclick="predict()">ðŸ”® Predict Flood Risk</button>
+            <button type="button" class="btn btn-secondary btn-small" onclick="clearData()">ðŸ—‘ï¸ Clear Data</button>
         </div>
         
         <div class="card hidden" id="results">
             <h1>Flood Prediction Results</h1>
+            <p class="subtitle">Predictions for Year <span id="predictionYearDisplay"></span></p>
             
-            <h2 id="predictionTitle">Prediction</h2>
-            <div class="prediction-grid" id="predictions"></div>
+            <div id="predictionResult"></div>
             
-            <h2>Rainfall Trend</h2>
+            <h2>ðŸ“Š Rainfall Trend</h2>
             <div class="chart-container"><canvas id="rainfallChart"></canvas></div>
             
-            <h2>Temperature Trend</h2>
+            <h2>ðŸŒ¡ï¸ Temperature Trend</h2>
             <div class="chart-container"><canvas id="tempChart"></canvas></div>
             
-            <h2>Water Level Prediction</h2>
+            <h2>ðŸ’§ Water Level Prediction</h2>
             <div class="chart-container"><canvas id="waterChart"></canvas></div>
             
-            <h2>Historical Data</h2>
+            <h2>ðŸ“‹ Historical Data</h2>
             <table id="history-table">
                 <thead>
-                    <tr><th>Year</th><th>Rainfall</th><th>Avg Temp</th><th>Max Temp</th><th>Surma</th><th>Kushiyara</th></tr>
+                    <tr><th>Year</th><th>Rainfall (mm)</th><th>Avg Temp (Â°C)</th><th>Max Temp (Â°C)</th><th>Surma (m)</th><th>Kushiyara (m)</th></tr>
                 </thead>
                 <tbody></tbody>
             </table>
             
-            <a href="#" class="btn-back" onclick="showForm(); return false;">Back to Input</a>
+            <a href="#" class="btn-back" onclick="showForm(); return false;">â† Back to Input</a>
         </div>
     </div>
     
     <script>
         var charts = [];
+        var apiData = null;
+        
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'manual') {
+                document.getElementById('manual-tab').classList.remove('hidden');
+                document.getElementById('api-tab').classList.add('hidden');
+            } else {
+                document.getElementById('manual-tab').classList.add('hidden');
+                document.getElementById('api-tab').classList.remove('hidden');
+            }
+        }
         
         function parseList(str) {
+            if (!str) return [];
             var arr = str.split(',');
             var result = [];
             for (var i = 0; i < arr.length; i++) {
@@ -124,6 +234,7 @@
         }
         
         function mean(arr) {
+            if (arr.length === 0) return 0;
             var sum = 0;
             for (var i = 0; i < arr.length; i++) {
                 sum += arr[i];
@@ -133,6 +244,7 @@
         
         function slope(x, y) {
             var n = x.length;
+            if (n === 0) return 0;
             var xm = mean(x);
             var ym = mean(y);
             var num = 0;
@@ -148,38 +260,120 @@
             return mean(y) - m * mean(x);
         }
         
+        async function fetchWeatherData() {
+            var lat = document.getElementById('lat').value;
+            var lon = document.getElementById('lon').value;
+            var startYear = parseInt(document.getElementById('api_start_year').value);
+            var endYear = 2025;
+            
+            document.getElementById('api-loading').classList.remove('hidden');
+            document.getElementById('api-result').innerHTML = '';
+            
+            try {
+                var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
+                    '&start_date=' + startYear + '-01-01&end_date=' + endYear + '-12-31&daily=precipitation_sum,temperature_2m_mean_max,temperature_2m_mean&timezone=Asia/Dhaka';
+                
+                var response = await fetch(url);
+                var data = await response.json();
+                
+                if (data.daily) {
+                    var years = [];
+                    var rainfall = [];
+                    var avgTemp = [];
+                    var maxTemp = [];
+                    
+                    var daily = data.daily;
+                    var dates = daily.time;
+                    
+                    var yearlyRainfall = {};
+                    var yearlyAvgTemp = {};
+                    var yearlyMaxTemp = {};
+                    
+                    for (var i = 0; i < dates.length; i++) {
+                        var year = parseInt(dates[i].split('-')[0]);
+                        if (!yearlyRainfall[year]) {
+                            yearlyRainfall[year] = [];
+                            yearlyAvgTemp[year] = [];
+                            yearlyMaxTemp[year] = [];
+                        }
+                        if (daily.precipitation_sum && daily.precipitation_sum[i]) {
+                            yearlyRainfall[year].push(daily.precipitation_sum[i]);
+                        }
+                        if (daily.temperature_2m_mean && daily.temperature_2m_mean[i]) {
+                            yearlyAvgTemp[year].push(daily.temperature_2m_mean[i]);
+                        }
+                        if (daily.temperature_2m_mean_max && daily.temperature_2m_mean_max[i]) {
+                            yearlyMaxTemp[year].push(daily.temperature_2m_mean_max[i]);
+                        }
+                    }
+                    
+                    for (var year = startYear; year <= endYear; year++) {
+                        if (yearlyRainfall[year] && yearlyRainfall[year].length > 0) {
+                            years.push(year);
+                            var total = 0;
+                            for (var r = 0; r < yearlyRainfall[year].length; r++) {
+                                total += yearlyRainfall[year][r];
+                            }
+                            rainfall.push(Math.round(total));
+                            
+                            var sumTemp = 0;
+                            for (var t = 0; t < yearlyAvgTemp[year].length; t++) {
+                                sumTemp += yearlyAvgTemp[year][t];
+                            }
+                            avgTemp.push(Math.round(sumTemp / yearlyAvgTemp[year].length * 10) / 10);
+                            
+                            var maxSum = 0;
+                            for (var m = 0; m < yearlyMaxTemp[year].length; m++) {
+                                maxSum += yearlyMaxTemp[year][m];
+                            }
+                            maxTemp.push(Math.round(maxSum / yearlyMaxTemp[year].length * 10) / 10);
+                        }
+                    }
+                    
+                    document.getElementById('years').value = years.join(',');
+                    document.getElementById('rainfall').value = rainfall.join(', ');
+                    document.getElementById('avg_temp').value = avgTemp.join(', ');
+                    document.getElementById('max_temp').value = maxTemp.join(', ');
+                    
+                    document.getElementById('api-result').innerHTML = '<p style="color: green;">âœ… Successfully fetched ' + years.length + ' years of weather data!</p>';
+                    apiData = { years: years, rainfall: rainfall, avgTemp: avgTemp, maxTemp: maxTemp };
+                } else {
+                    document.getElementById('api-result').innerHTML = '<p style="color: red;">âŒ No data available for this location/year range.</p>';
+                }
+            } catch (err) {
+                document.getElementById('api-result').innerHTML = '<p style="color: red;">âŒ Error: ' + err.message + '</p>';
+            }
+            
+            document.getElementById('api-loading').classList.add('hidden');
+        }
+        
         function predict() {
+            var yearsStr = document.getElementById('years').value;
+            var years = parseList(yearsStr);
             var rainfall = parseList(document.getElementById('rainfall').value);
             var avg_temp = parseList(document.getElementById('avg_temp').value);
             var max_temp = parseList(document.getElementById('max_temp').value);
             var surma = parseList(document.getElementById('surma').value);
             var kushiyara = parseList(document.getElementById('kushiyara').value);
             var predictYear = parseInt(document.getElementById('predictYear').value);
+            var surmaThreshold = parseFloat(document.getElementById('surma_threshold').value);
+            var kushiThreshold = parseFloat(document.getElementById('kushiyara_threshold').value);
             
-            if (rainfall.length < 2 || avg_temp.length < 2 || max_temp.length < 2 || surma.length < 2 || kushiyara.length < 2) {
-                alert('Please provide at least 2 values for each field');
+            if (years.length < 2 || rainfall.length < 2) {
+                alert('Please provide at least 2 years of data');
                 return;
             }
             
-            if (rainfall.length !== avg_temp.length || rainfall.length !== max_temp.length || 
+            if (rainfall.length !== years.length || rainfall.length !== avg_temp.length || 
                 rainfall.length !== surma.length || rainfall.length !== kushiyara.length) {
-                alert('All fields must have the same number of values');
+                alert('All fields must have the same number of values. Years: ' + years.length + ', Rainfall: ' + rainfall.length);
                 return;
-            }
-            
-            var n = rainfall.length;
-            var startYear = 2026 - n;
-            var years = [];
-            for (var i = 0; i < n; i++) {
-                years.push(startYear + i);
             }
             
             var rSlope = slope(years, rainfall);
             var rIntercept = intercept(years, rainfall, rSlope);
-            
             var avgSlope = slope(years, avg_temp);
             var avgIntercept = intercept(years, avg_temp, avgSlope);
-            
             var maxSlope = slope(years, max_temp);
             var maxIntercept = intercept(years, max_temp, maxSlope);
             
@@ -201,7 +395,9 @@
                 avgTemp: futureAvgTemp,
                 maxTemp: futureMaxTemp,
                 surma: Math.round(sLevel * 100) / 100,
-                kushi: Math.round(kLevel * 100) / 100
+                kushi: Math.round(kLevel * 100) / 100,
+                surmaThreshold: surmaThreshold,
+                kushiThreshold: kushiThreshold
             };
             
             displayResults(years, rainfall, avg_temp, max_temp, surma, kushiyara, prediction);
@@ -210,20 +406,31 @@
         function displayResults(years, rainfall, avgTemp, maxTemp, surma, kushiyara, prediction) {
             document.getElementById('input-form').classList.add('hidden');
             document.getElementById('results').classList.remove('hidden');
-            document.getElementById('predictionTitle').textContent = 'Prediction for ' + prediction.year;
+            document.getElementById('predictionYearDisplay').textContent = prediction.year;
             
-            var predsDiv = document.getElementById('predictions');
             var p = prediction;
-            predsDiv.innerHTML = '<div class="prediction-box">' +
-                '<h3>' + p.year + '</h3>' +
-                '<div class="data-row"><span class="data-label">Rainfall</span><span class="data-value">' + p.rainfall + ' mm</span></div>' +
-                '<div class="data-row"><span class="data-label">Avg Temp</span><span class="data-value">' + p.avgTemp + ' Â°C</span></div>' +
-                '<div class="data-row"><span class="data-label">Max Temp</span><span class="data-value">' + p.maxTemp + ' Â°C</span></div>' +
-                '<div class="data-row"><span class="data-label">Surma Level</span><span class="data-value">' + p.surma + ' m</span></div>' +
-                '<div class="data-row"><span class="data-label">Kushiyara Level</span><span class="data-value">' + p.kushi + ' m</span></div>' +
-                '<div class="data-row"><span class="data-label">Surma Risk</span><span class="data-value ' + (p.surma > 13 ? 'risk-high' : 'risk-low') + '">' + (p.surma > 13 ? 'HIGH' : 'LOW') + '</span></div>' +
-                '<div class="data-row"><span class="data-label">Kushiyara Risk</span><span class="data-value ' + (p.kushi > 15 ? 'risk-high' : 'risk-low') + '">' + (p.kushi > 15 ? 'HIGH' : 'LOW') + '</span></div>' +
+            var surmaRisk = p.surma > p.surmaThreshold ? 'HIGH' : (p.surma > p.surmaThreshold - 1 ? 'MEDIUM' : 'LOW');
+            var kushiRisk = p.kushi > p.kushiThreshold ? 'HIGH' : (p.kushi > p.kushiThreshold - 1 ? 'MEDIUM' : 'LOW');
+            
+            var surmaBoxClass = surmaRisk === 'HIGH' ? 'danger' : (surmaRisk === 'MEDIUM' ? 'warning' : 'success');
+            var kushiBoxClass = kushiRisk === 'HIGH' ? 'danger' : (kushiRisk === 'MEDIUM' ? 'warning' : 'success');
+            
+            var resultHtml = '<div class="prediction-grid">' +
+                '<div class="prediction-box ' + surmaBoxClass + '">' +
+                '<h3>ðŸš¤ Surma River</h3>' +
+                '<div class="data-row"><span class="data-label">Predicted Level</span><span class="data-value">' + p.surma + ' m</span></div>' +
+                '<div class="data-row"><span class="data-label">Flood Risk</span><span class="data-value risk-' + surmaRisk.toLowerCase() + '">' + surmaRisk + '</span></div>' +
+                '<div class="data-row"><span class="data-label">Threshold</span><span class="data-value">' + p.surmaThreshold + ' m</span></div>' +
+                '</div>' +
+                '<div class="prediction-box ' + kushiBoxClass + '">' +
+                '<h3>ðŸŒŠ Kushiyara River</h3>' +
+                '<div class="data-row"><span class="data-label">Predicted Level</span><span class="data-value">' + p.kushi + ' m</span></div>' +
+                '<div class="data-row"><span class="data-label">Flood Risk</span><span class="data-value risk-' + kushiRisk.toLowerCase() + '">' + kushiRisk + '</span></div>' +
+                '<div class="data-row"><span class="data-label">Threshold</span><span class="data-value">' + p.kushiThreshold + ' m</span></div>' +
+                '</div>' +
                 '</div>';
+            
+            document.getElementById('predictionResult').innerHTML = resultHtml;
             
             var tableBody = document.querySelector('#history-table tbody');
             var tableHtml = '';
@@ -243,21 +450,21 @@
             
             charts.push(new Chart(document.getElementById('rainfallChart'), {
                 type: 'line',
-                data: { labels: allYears, datasets: [{ label: 'Rainfall (mm)', data: allRainfall, borderColor: '#667eea', fill: true, tension: 0.3 }] },
+                data: { labels: allYears, datasets: [{ label: 'Rainfall (mm)', data: allRainfall, borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,0.1)', fill: true, tension: 0.3 }] },
                 options: { responsive: true, maintainAspectRatio: false }
             }));
             
             charts.push(new Chart(document.getElementById('tempChart'), {
                 type: 'line',
-                data: { labels: allYears, datasets: [{ label: 'Avg Temp (Â°C)', data: allAvgTemp, borderColor: '#e74c3c', fill: true, tension: 0.3 }] },
+                data: { labels: allYears, datasets: [{ label: 'Avg Temp (Â°C)', data: allAvgTemp, borderColor: '#e74c3c', backgroundColor: 'rgba(231,76,60,0.1)', fill: true, tension: 0.3 }] },
                 options: { responsive: true, maintainAspectRatio: false }
             }));
             
             charts.push(new Chart(document.getElementById('waterChart'), {
                 type: 'line',
                 data: { labels: allYears, datasets: [
-                    { label: 'Surma', data: allSurma, borderColor: '#3498db', fill: true, tension: 0.3 },
-                    { label: 'Kushiyara', data: allKushi, borderColor: '#27ae60', fill: true, tension: 0.3 }
+                    { label: 'Surma', data: allSurma, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.1)', fill: true, tension: 0.3 },
+                    { label: 'Kushiyara', data: allKushi, borderColor: '#27ae60', backgroundColor: 'rgba(39,174,96,0.1)', fill: true, tension: 0.3 }
                 ] },
                 options: { responsive: true, maintainAspectRatio: false }
             }));
@@ -270,6 +477,15 @@
             document.getElementById('input-form').classList.remove('hidden');
             charts.forEach(function(c) { c.destroy(); });
             charts = [];
+        }
+        
+        function clearData() {
+            document.getElementById('rainfall').value = '';
+            document.getElementById('avg_temp').value = '';
+            document.getElementById('max_temp').value = '';
+            document.getElementById('surma').value = '';
+            document.getElementById('kushiyara').value = '';
+            document.getElementById('years').value = '';
         }
     </script>
 </body>
