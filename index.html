@@ -359,6 +359,8 @@
             var startYear = parseInt(document.getElementById('api_start_year').value);
             var endYear = 2025;
             
+            alert('Fetching weather data for lat: ' + lat + ', lon: ' + lon + ', from ' + startYear);
+            
             if (!lat || !lon) {
                 alert('Please enter latitude and longitude');
                 return;
