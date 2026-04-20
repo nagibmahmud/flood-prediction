@@ -321,6 +321,16 @@
             
             <div id="panel-api" class="hidden">
                 <div class="form-group">
+                    <label>Select Data Source</label>
+                    <select id="data-source" onchange="updateSourceOptions()">
+                        <option value="openmeteo">Open-Meteo (Free, Recommended)</option>
+                        <option value="visualcrossing">Visual Crossing (Free Tier)</option>
+                        <option value="weatherapi">WeatherAPI (Free Tier)</option>
+                        <option value="wttr">WTTR.in (Free)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label>Select Location</label>
                     <select id="location">
                         <option value="24.8918,91.8697">Sylhet - Main Station</option>
@@ -328,12 +338,19 @@
                         <option value="24.4829,91.7703">Moulvibazar</option>
                         <option value="24.3745,91.4155">Habiganj</option>
                         <option value="25.0667,91.4000">Sunamganj</option>
+                        <option value="24.4333,91.8000">Madhur</option>
+                        <option value="24.7500,91.8500">Bholaganj</option>
                     </select>
+                </div>
+                
+                <div class="form-group" id="api-key-group" class="hidden">
+                    <label>API Key (if required)</label>
+                    <input type="text" id="api-key" placeholder="Enter API key">
                 </div>
                 
                 <div class="form-group">
                     <label>Start Year (for historical data)</label>
-                    <input type="number" id="api_year" value="2020">
+                    <input type="number" id="api_year" value="2020" min="2015" max="2025">
                 </div>
                 
                 <button type="button" class="btn btn-outline" onclick="fetchWeather()">Fetch Weather Data</button>
@@ -477,17 +494,42 @@
             return mean(y) - m * mean(x);
         }
         
+        function updateSourceOptions() {
+            var source = document.getElementById('data-source').value;
+            var keyGroup = document.getElementById('api-key-group');
+            if (source === 'weatherapi' || source === 'visualcrossing') {
+                keyGroup.classList.remove('hidden');
+            } else {
+                keyGroup.classList.add('hidden');
+            }
+        }
+        
         function fetchWeather() {
             var loc = document.getElementById('location').value.split(',');
             var lat = loc[0], lon = loc[1];
             var startYear = parseInt(document.getElementById('api_year').value);
+            var source = document.getElementById('data-source').value;
             
             var msg = document.getElementById('api-msg');
             msg.className = 'message';
             msg.textContent = 'Loading...';
             
-            var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
-                '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
+            var url;
+            
+            if (source === 'openmeteo') {
+                url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
+                    '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
+            } else if (source === 'wttr') {
+                // WTTR doesn't have historical data, show message
+                msg.textContent = 'Note: WTTR.in does not have historical data. Use other sources.';
+                msg.className = 'message error';
+                return;
+            } else {
+                msg.textContent = 'This source requires API key. Using Open-Meteo instead.';
+                source = 'openmeteo';
+                url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
+                    '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
+            }
             
             fetch(url)
                 .then(function(response) {
