@@ -418,7 +418,7 @@
                 </div>
             </div>
             
-            <button type="button" class="btn" onclick="console.log('Button clicked'); predict()">Predict Flood Risk</button>
+            <button type="button" class="btn" id="predict-btn">Predict Flood Risk</button>
         </div>
         
         <div class="card hidden" id="result-card">
@@ -906,6 +906,11 @@ var predictYear = parseInt(document.getElementById('predict_year').value);
             document.getElementById('result-card').classList.add('hidden');
             document.getElementById('input-card').classList.remove('hidden');
         }
+        
+        document.getElementById('predict-btn').addEventListener('click', function() {
+            console.log('Button clicked');
+            predict();
+        });
     </script>
 </body>
 </html>
