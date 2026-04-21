@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flood Prediction System - Surma & Kushiyara River</title>
+    <title>Flood Prediction System v2 - Surma & Kushiyara River</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -116,6 +116,12 @@
             gap: 20px;
         }
         
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        
         .btn {
             width: 100%;
             padding: 16px;
@@ -167,6 +173,17 @@
             background: #e8f5e9;
             color: #2e7d32;
             border-left: 4px solid #2e7d32;
+        }
+        
+        .result-section {
+            margin-bottom: 25px;
+        }
+        
+        .result-section h3 {
+            color: #1a237e;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
         }
         
         .result-grid {
@@ -271,8 +288,39 @@
             margin-top: 20px;
         }
         
+        .flood-line {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .flood-line h4 {
+            color: #d32f2f;
+            margin-bottom: 10px;
+        }
+        
+        .flood-status {
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
+        
+        .flood-status.risk {
+            background: #d32f2f;
+            color: white;
+        }
+        
+        .flood-status.safe {
+            background: #388e3c;
+            color: white;
+        }
+        
         @media (max-width: 768px) {
-            .form-row, .result-grid {
+            .form-row, .form-row-3, .result-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -281,8 +329,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Flood Prediction System</h1>
-            <p>Surma & Kushiyara River Basin - Sylhet Division, Bangladesh</p>
+            <h1>Flood Prediction System v2</h1>
+            <p>Surma & Kushiyara River Basin - Multiple Regression Model</p>
         </div>
         
         <div class="card" id="input-card">
@@ -302,9 +350,15 @@
                     <input type="text" id="rainfall" value="4210, 5120, 3950, 4480, 4100, 3850, 5430, 4320, 5080, 4250">
                 </div>
                 
-                <div class="form-group">
-                    <label>Average Temperature (Â°C)</label>
-                    <input type="text" id="avg_temp" value="25.8, 26.1, 25.9, 26.0, 25.7, 26.3, 26.5, 26.8, 26.4, 27.1">
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label>Average Temperature (Â°C)</label>
+                        <input type="text" id="avg_temp" value="25.8, 26.1, 25.9, 26.0, 25.7, 26.3, 26.5, 26.8, 26.4, 27.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Temperature (Â°C)</label>
+                        <input type="text" id="max_temp" value="34.5, 35.0, 34.2, 34.2, 34.0, 36.1, 35.8, 37.2, 35.4, 36.8">
+                    </div>
                 </div>
                 
                 <div class="form-row">
@@ -323,58 +377,20 @@
                 <div class="form-group">
                     <label>Select Data Source</label>
                     <select id="data-source" onchange="updateSourceOptions()">
-                        <optgroup label="Free Sources">
-                            <option value="openmeteo">Open-Meteo (Recommended)</option>
-                            <option value="ogimet">OGIMET</option>
-                            <option value="noaa">NOAA Climate Data</option>
-                            <option value="cds">Copernicus CDS</option>
-                            <option value="wunderground">Weather Underground</option>
-                        </optgroup>
-                        <optgroup label="Freemium Sources">
-                            <option value="visualcrossing">Visual Crossing</option>
-                            <option value="weatherapi">WeatherAPI</option>
-                            <option value="openweather">OpenWeatherMap</option>
-                            <option value="aeris">AerisWeather</option>
-                            <option value="tomorrow">Tomorrow.io</option>
-                            <option value="stormglass">Stormglass</option>
-                            <option value="weathersource">Weather Source</option>
-                            <option value="pastweather">Past Weather</option>
-                        </optgroup>
+                        <option value="openmeteo">Open-Meteo (Free)</option>
                     </select>
-                </div>
-                
-                <div class="form-group" id="api-key-group" style="display:none;">
-                    <label>API Key</label>
-                    <input type="text" id="api-key" placeholder="Enter API key">
-                    <small style="color:#666;">Get free key from the provider's website</small>
                 </div>
                 
                 <div class="form-group">
                     <label>Select Location</label>
                     <select id="location">
-                        <optgroup label="Sylhet Division">
-                            <option value="24.8918,91.8697">Sylhet - Main Station</option>
-                            <option value="24.9045,91.8611">Sylhet City</option>
-                            <option value="24.4829,91.7703">Moulvibazar</option>
-                            <option value="24.3745,91.4155">Habiganj</option>
-                            <option value="25.0667,91.4000">Sunamganj</option>
-                            <option value="24.4333,91.8000">Madhur</option>
-                            <option value="24.7500,91.8500">Bholaganj</option>
-                        </optgroup>
-                        <optgroup label="Chittagong Division">
-                            <option value="22.3569,91.7832">Chittagong</option>
-                            <option value="22.2269,91.9669">Cox's Bazar</option>
-                        </optgroup>
-                        <optgroup label="Dhaka Division">
-                            <option value="23.8103,90.4125">Dhaka</option>
-                            <option value="23.9995,90.4023">Gazipur</option>
-                        </optgroup>
+                        <option value="24.8918,91.8697">Sylhet - Main Station</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label>Start Year</label>
-                    <input type="number" id="api_year" value="2020" min="2015" max="2025">
+                    <input type="number" id="api_year" value="2016" min="2015" max="2025">
                 </div>
                 
                 <button type="button" class="btn btn-outline" onclick="fetchWeather()">Fetch Weather Data</button>
@@ -386,7 +402,7 @@
             
             <div class="form-group">
                 <label>Prediction Year</label>
-                <input type="number" id="predict_year" value="2027">
+                <input type="number" id="predict_year" value="2026">
             </div>
             
             <div class="form-row">
@@ -406,57 +422,65 @@
         <div class="card hidden" id="result-card">
             <h2 class="card-title">Prediction Results for Year <span id="result-year"></span></h2>
             
-            <div class="result-grid">
-                <div class="result-box" id="rain-box">
-                    <h3>Predicted Weather</h3>
-                    <div class="result-row">
-                        <span>Rainfall</span>
-                        <span id="pred-rainfall"></span>
-                    </div>
-                    <div class="result-row">
-                        <span>Avg Temperature</span>
-                        <span id="pred-temp"></span>
+            <div class="result-section">
+                <h3>Predicted Weather</h3>
+                <div class="result-grid">
+                    <div class="result-box">
+                        <div class="result-row"><span>Rainfall</span><span id="pred-rainfall"></span></div>
+                        <div class="result-row"><span>Avg Temperature</span><span id="pred-temp"></span></div>
+                        <div class="result-row"><span>Max Temperature</span><span id="pred-maxtemp"></span></div>
                     </div>
                 </div>
             </div>
             
-            <div class="result-grid">
-                <div class="result-box" id="surma-box">
-                    <h3>Surma River</h3>
-                    <div class="result-row">
-                        <span>Predicted Level</span>
-                        <span id="surma-level"></span>
+            <div class="result-section">
+                <h3>Predicted River Levels</h3>
+                <div class="result-grid">
+                    <div class="result-box" id="surma-box">
+                        <h3>Surma River</h3>
+                        <div class="result-row">
+                            <span>Predicted Level</span>
+                            <span id="surma-level"></span>
+                        </div>
+                        <div class="result-row">
+                            <span>Flood Risk</span>
+                            <span class="risk-badge" id="surma-risk"></span>
+                        </div>
                     </div>
-                    <div class="result-row">
-                        <span>Flood Risk</span>
-                        <span class="risk-badge" id="surma-risk"></span>
+                    
+                    <div class="result-box" id="kushi-box">
+                        <h3>Kushiyara River</h3>
+                        <div class="result-row">
+                            <span>Predicted Level</span>
+                            <span id="kushi-level"></span>
+                        </div>
+                        <div class="result-row">
+                            <span>Flood Risk</span>
+                            <span class="risk-badge" id="kushi-risk"></span>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="result-box" id="kushi-box">
-                    <h3>Kushiyara River</h3>
-                    <div class="result-row">
-                        <span>Predicted Level</span>
-                        <span id="kushi-level"></span>
-                    </div>
-                    <div class="result-row">
-                        <span>Flood Risk</span>
-                        <span class="risk-badge" id="kushi-risk"></span>
-                    </div>
+            </div>
+            
+            <div class="flood-line">
+                <h4>Flood Condition Analysis</h4>
+                <div class="result-row">
+                    <span>Surma >= <span id="thresh-surma"></span> m OR Kushiyara >= <span id="thresh-kushi"></span> m</span>
+                </div>
+                <div class="flood-status" id="flood-status"></div>
+            </div>
+            
+            <div class="chart-section">
+                <h3>Surma: Actual vs Predicted</h3>
+                <div class="chart-container">
+                    <canvas id="surma-chart"></canvas>
                 </div>
             </div>
             
             <div class="chart-section">
-                <h3>Rainfall Trend</h3>
+                <h3>Kushiyara: Actual vs Predicted</h3>
                 <div class="chart-container">
-                    <canvas id="rain-chart"></canvas>
-                </div>
-            </div>
-            
-            <div class="chart-section">
-                <h3>Water Level Prediction</h3>
-                <div class="chart-container">
-                    <canvas id="water-chart"></canvas>
+                    <canvas id="kushi-chart"></canvas>
                 </div>
             </div>
             
@@ -467,6 +491,7 @@
                         <th>Year</th>
                         <th>Rainfall (mm)</th>
                         <th>Temp (Â°C)</th>
+                        <th>Max Temp (Â°C)</th>
                         <th>Surma (m)</th>
                         <th>Kushiyara (m)</th>
                     </tr>
@@ -504,79 +529,196 @@
             return arr.reduce(function(a, b) { return a + b; }, 0) / arr.length;
         }
         
-        function slope(x, y) {
-            var xm = mean(x), ym = mean(y);
-            var num = 0, den = 0;
-            for (var i = 0; i < x.length; i++) {
-                num += (x[i] - xm) * (y[i] - ym);
-                den += (x[i] - xm) * (x[i] - xm);
+        function multiply(a, b) {
+            var result = [];
+            for (var i = 0; i < a.length; i++) {
+                result.push(a[i] * b[i]);
             }
-            return den === 0 ? 0 : num / den;
+            return result;
         }
         
-        function intercept(x, y, m) {
-            return mean(y) - m * mean(x);
+        function add(a, b) {
+            var result = [];
+            for (var i = 0; i < a.length; i++) {
+                result.push(a[i] + b[i]);
+            }
+            return result;
         }
         
-        function updateSourceOptions() {
-            var source = document.getElementById('data-source').value;
-            var keyGroup = document.getElementById('api-key-group');
-            if (source === 'weatherapi' || source === 'visualcrossing') {
-                keyGroup.classList.remove('hidden');
-            } else {
-                keyGroup.classList.add('hidden');
+        function subtract(a, b) {
+            var result = [];
+            for (var i = 0; i < a.length; i++) {
+                result.push(a[i] - b[i]);
+            }
+            return result;
+        }
+        
+        function dot(a, b) {
+            var sum = 0;
+            for (var i = 0; i < a.length; i++) {
+                sum += a[i] * b[i];
+            }
+            return sum;
+        }
+        
+        function transpose(matrix) {
+            var result = [];
+            for (var i = 0; i < matrix[0].length; i++) {
+                var row = [];
+                for (var j = 0; j < matrix.length; j++) {
+                    row.push(matrix[j][i]);
+                }
+                result.push(row);
+            }
+            return result;
+        }
+        
+        function invert(matrix) {
+            try {
+                var n = matrix.length;
+                var augmented = JSON.parse(JSON.stringify(matrix));
+                
+                for (var i = 0; i < n; i++) {
+                    for (var j = 0; j < n; j++) {
+                        augmented[i].push(i === j ? 1 : 0);
+                    }
+                }
+                
+                for (var i = 0; i < n; i++) {
+                    var pivot = augmented[i][i];
+                    if (Math.abs(pivot) < 1e-10) {
+                        var found = false;
+                        for (var r = i + 1; r < n; r++) {
+                            if (Math.abs(augmented[r][i]) > 1e-10) {
+                                var temp = augmented[i];
+                                augmented[i] = augmented[r];
+                                augmented[r] = temp;
+                                pivot = augmented[i][i];
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) return [];
+                    }
+                    for (var j = 0; j < 2 * n; j++) {
+                        augmented[i][j] /= pivot;
+                    }
+                    for (var k = 0; k < n; k++) {
+                        if (k !== i) {
+                            var factor = augmented[k][i];
+                            for (var j = 0; j < 2 * n; j++) {
+                                augmented[k][j] -= factor * augmented[i][j];
+                            }
+                        }
+                    }
+                }
+                
+                var result = [];
+                for (var i = 0; i < n; i++) {
+                    result.push(augmented[i].slice(n));
+                }
+                return result;
+            } catch (e) {
+                return [];
             }
         }
+        
+        function matrixMultiply(a, b) {
+            var result = [];
+            var bt = transpose(b);
+            for (var i = 0; i < a.length; i++) {
+                var row = [];
+                for (var j = 0; j < bt.length; j++) {
+                    row.push(dot(a[i], bt[j]));
+                }
+                result.push(row);
+            }
+            return result;
+        }
+        
+function solveLinearSystem(X, y) {
+            var n = X.length;
+            var k = X[0].length;
+            
+            var Xt = transpose(X);
+            var XtX = matrixMultiply(Xt, X);
+            var Xty = [];
+            for (var i = 0; i < k; i++) {
+                Xty.push(dot(Xt[i], y));
+            }
+            
+            var A = JSON.parse(JSON.stringify(XtX));
+            var b = Xty.slice();
+            n = k;
+            
+            for (var i = 0; i < n; i++) {
+                var maxRow = i;
+                for (var r = i + 1; r < n; r++) {
+                    if (Math.abs(A[r][i]) > Math.abs(A[maxRow][i])) maxRow = r;
+                }
+                var temp = A[i]; A[i] = A[maxRow]; A[maxRow] = temp;
+                var tempB = b[i]; b[i] = b[maxRow]; b[maxRow] = tempB;
+                
+                if (Math.abs(A[i][i]) < 1e-10) { b[i] = 0; continue; }
+                
+                for (var r = i + 1; r < n; r++) {
+                    var factor = A[r][i] / A[i][i];
+                    for (var c = i; c < n; c++) A[r][c] -= factor * A[i][c];
+                    b[r] -= factor * b[i];
+                }
+            }
+            
+            var x = new Array(n).fill(0);
+            for (var i = n - 1; i >= 0; i--) {
+                if (Math.abs(A[i][i]) < 1e-10) continue;
+                x[i] = b[i];
+                for (var r = i + 1; r < n; r++) x[i] -= A[i][r] * x[r];
+                x[i] /= A[i][i];
+            }
+            return x;
+        }
+        
+        function linearRegression(X, y) {
+            return solveLinearSystem(X, y);
+        }
+        
+        function predictMulti(X, beta) {
+            var result = [];
+            for (var i = 0; i < X.length; i++) {
+                var sum = 0;
+                for (var j = 0; j < X[i].length; j++) {
+                    sum += X[i][j] * beta[j];
+                }
+                result.push(sum);
+            }
+            return result;
+        }
+        
+        function rmse(actual, predicted) {
+            var sum = 0;
+            for (var i = 0; i < actual.length; i++) {
+                sum += Math.pow(actual[i] - predicted[i], 2);
+            }
+            return Math.sqrt(sum / actual.length);
+        }
+        
+        function updateSourceOptions() {}
         
         function fetchWeather() {
             var loc = document.getElementById('location').value.split(',');
             var lat = loc[0], lon = loc[1];
             var startYear = parseInt(document.getElementById('api_year').value);
-            var source = document.getElementById('data-source').value;
-            var apiKey = document.getElementById('api-key').value;
             
             var msg = document.getElementById('api-msg');
             msg.className = 'message';
-            msg.textContent = 'Loading from ' + source + '...';
+            msg.textContent = 'Loading from Open-Meteo...';
             
-            var url;
-            
-            // Free sources - work directly
-            if (source === 'openmeteo' || source === 'noaa' || source === 'cds' || source === 'wunderground' || source === 'ogimet') {
-                // All use Open-Meteo as fallback for now (free, no key needed)
-                url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
-                    '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
-                msg.textContent = 'Fetching from Open-Meteo (free, no API key)...';
-            } 
-            // Freemium sources - need API key
-            else if (['visualcrossing', 'weatherapi', 'openweather', 'aeris', 'tomorrow', 'stormglass', 'weathersource', 'pastweather'].includes(source)) {
-                if (!apiKey) {
-                    msg.textContent = 'API key required. Using Open-Meteo instead (free).';
-                    url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
-                        '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
-                } else {
-                    msg.textContent = 'API key provided. Note: Configure your API in the code for premium sources.';
-                    url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
-                        '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean&timezone=auto';
-                }
-            }
+            var url = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + lat + '&longitude=' + lon + 
+                '&start_date=' + startYear + '-01-01&end_date=2025-12-31&daily=precipitation_sum,temperature_2m_mean,temperature_2m_max&timezone=auto';
             
             fetch(url)
-                .then(function(response) {
-                    if (!response.ok) {
-                        msg.textContent = 'Error: HTTP ' + response.status;
-                        msg.className = 'message error';
-                        return null;
-                    }
-                    return response.json();
-                })
+                .then(function(response) { return response.json(); })
                 .then(function(data) {
-                    if (!data) return;
-                    if (data.error) {
-                        msg.textContent = 'Error: ' + data.error;
-                        msg.className = 'message error';
-                        return;
-                    }
                     if (!data.daily || !data.daily.time) {
                         msg.textContent = 'No data found';
                         msg.className = 'message error';
@@ -584,29 +726,34 @@
                     }
                     
                     var daily = data.daily;
-                    var years = [], rain = [], temp = [];
-                    var yearlyRain = {}, yearlyTemp = {};
+                    var years = [], rain = [], temp = [], maxt = [];
+                    var yearlyRain = {}, yearlyTemp = {}, yearlyMaxt = {};
                     
                     for (var i = 0; i < daily.time.length; i++) {
                         var y = parseInt(daily.time[i].substring(0, 4));
                         if (!yearlyRain[y]) {
                             yearlyRain[y] = 0;
                             yearlyTemp[y] = [];
+                            yearlyMaxt[y] = [];
                         }
                         if (daily.precipitation_sum[i]) yearlyRain[y] += daily.precipitation_sum[i];
                         if (daily.temperature_2m_mean[i]) yearlyTemp[y].push(daily.temperature_2m_mean[i]);
+                        if (daily.temperature_2m_max[i]) yearlyMaxt[y].push(daily.temperature_2m_max[i]);
                     }
                     
                     Object.keys(yearlyRain).sort().forEach(function(y) {
                         years.push(y);
                         rain.push(Math.round(yearlyRain[y]));
-                        var sum = yearlyTemp[y].reduce(function(a, b) { return a + b; }, 0);
-                        temp.push(Math.round(sum / yearlyTemp[y].length * 10) / 10);
+                        var tsum = yearlyTemp[y].reduce(function(a, b) { return a + b; }, 0);
+                        temp.push(Math.round(tsum / yearlyTemp[y].length * 10) / 10);
+                        var msum = yearlyMaxt[y].reduce(function(a, b) { return a + b; }, 0);
+                        maxt.push(Math.round(msum / yearlyMaxt[y].length * 10) / 10);
                     });
                     
                     document.getElementById('years').value = years.join(',');
                     document.getElementById('rainfall').value = rain.join(', ');
                     document.getElementById('avg_temp').value = temp.join(', ');
+                    document.getElementById('max_temp').value = maxt.join(', ');
                     
                     msg.textContent = 'Loaded ' + years.length + ' years of data!';
                     msg.className = 'message success';
@@ -618,89 +765,127 @@
         }
         
         function predict() {
+            try {
             var years = parseList(document.getElementById('years').value);
             var rainfall = parseList(document.getElementById('rainfall').value);
             var avgTemp = parseList(document.getElementById('avg_temp').value);
+            var maxTemp = parseList(document.getElementById('max_temp').value);
             var surma = parseList(document.getElementById('surma').value);
             var kushiyara = parseList(document.getElementById('kushiyara').value);
-            var predictYear = parseInt(document.getElementById('predict_year').value);
+var predictYear = parseInt(document.getElementById('predict_year').value);
             var threshSurma = parseFloat(document.getElementById('threshold_surma').value);
             var threshKushi = parseFloat(document.getElementById('threshold_kushi').value);
+            var temp_increase = 0.03;
+            var lastIdx = years.length - 1;
+            var firstIdx = 0;
+            var slopeR = (rainfall[lastIdx] - rainfall[firstIdx]) / (years[lastIdx] - years[firstIdx]);
+            var slopeTavg = (avgTemp[lastIdx] - avgTemp[firstIdx]) / (years[lastIdx] - years[firstIdx]);
+            var slopeTmax = (maxTemp[lastIdx] - maxTemp[firstIdx]) / (years[lastIdx] - years[firstIdx]);
             
-            if (years.length < 2 || rainfall.length < 2) {
-                alert('Please enter at least 2 years of data');
-                return;
+            var R_pred = rainfall[lastIdx] + slopeR * (predictYear - years[lastIdx]);
+            var Tavg_pred = avgTemp[lastIdx] + slopeTavg * (predictYear - years[lastIdx]) + temp_increase;
+            var Tmax_pred = maxTemp[lastIdx] + slopeTmax * (predictYear - years[lastIdx]) + temp_increase;
+            
+            R_pred = Math.round(R_pred * 100) / 100;
+            Tavg_pred = Math.round(Tavg_pred * 100) / 100;
+            Tmax_pred = Math.round(Tmax_pred * 100) / 100;
+            
+            var X = [];
+            for (var i = 0; i < rainfall.length; i++) {
+                X.push([1, rainfall[i], avgTemp[i], maxTemp[i]]);
             }
             
-            // Linear regression for rainfall
-            var rM = slope(years, rainfall);
-            var rB = intercept(years, rainfall, rM);
-            var predRain = Math.round((rM * predictYear + rB) * 100) / 100;
+            var beta_s = linearRegression(X, surma);
+            var surma_pred = predictMulti(X, beta_s);
             
-            // Linear regression for temperature
-            var tM = slope(years, avgTemp);
-            var tB = intercept(years, avgTemp, tM);
-            var predTemp = Math.round((tM * predictYear + tB) * 100) / 100;
+            var beta_k = linearRegression(X, kushiyara);
+            var kushiyara_pred = predictMulti(X, kushiyara);
             
-            document.getElementById('pred-rainfall').textContent = predRain + ' mm';
-            document.getElementById('pred-temp').textContent = predTemp + ' Â°C';
+            var X_pred = [[1, R_pred, Tavg_pred, Tmax_pred]];
+            var surma_predicted = Math.round(predictMulti(X_pred, beta_s)[0] * 100) / 100;
+            var kushiyara_predicted = Math.round(predictMulti(X_pred, beta_k)[0] * 100) / 100;
             
-            // Linear regression for rivers
-            var sM = slope(rainfall, surma);
-            var sB = intercept(rainfall, surma, sM);
-            var predSurma = Math.round((sM * predRain + sB) * 100) / 100;
+            document.getElementById('pred-rainfall').textContent = R_pred + ' mm';
+            document.getElementById('pred-temp').textContent = Tavg_pred + ' Â°C';
+            document.getElementById('pred-maxtemp').textContent = Tmax_pred + ' Â°C';
             
-            var kM = slope(rainfall, kushiyara);
-            var kB = intercept(rainfall, kushiyara, kM);
-            var predKushi = Math.round((kM * predRain + kB) * 100) / 100;
-            
-            var surmaRisk = predSurma > threshSurma ? 'HIGH' : 'LOW';
-            var kushiRisk = predKushi > threshKushi ? 'HIGH' : 'LOW';
+            document.getElementById('surma-level').textContent = surma_predicted + ' m';
+            document.getElementById('kushi-level').textContent = kushiyara_predicted + ' m';
             
             document.getElementById('result-year').textContent = predictYear;
-            document.getElementById('surma-level').textContent = predSurma + ' m';
+            
+            var surmaRisk = surma_predicted >= threshSurma ? 'HIGH' : 'LOW';
+            var kushiRisk = kushiyara_predicted >= threshKushi ? 'HIGH' : 'LOW';
+            
             document.getElementById('surma-risk').textContent = surmaRisk;
             document.getElementById('surma-risk').className = 'risk-badge ' + surmaRisk.toLowerCase();
             document.getElementById('surma-box').className = 'result-box ' + surmaRisk.toLowerCase();
             
-            document.getElementById('kushi-level').textContent = predKushi + ' m';
             document.getElementById('kushi-risk').textContent = kushiRisk;
             document.getElementById('kushi-risk').className = 'risk-badge ' + kushiRisk.toLowerCase();
             document.getElementById('kushi-box').className = 'result-box ' + kushiRisk.toLowerCase();
             
-            // Table
+            document.getElementById('thresh-surma').textContent = threshSurma;
+            document.getElementById('thresh-kushi').textContent = threshKushi;
+            
+            var floodStatus = document.getElementById('flood-status');
+            if (surma_predicted >= threshSurma || kushiyara_predicted >= threshKushi) {
+                floodStatus.textContent = 'FLOOD RISK';
+                floodStatus.className = 'flood-status risk';
+            } else {
+                floodStatus.textContent = 'SAFE';
+                floodStatus.className = 'flood-status safe';
+            }
+            
             var tbody = document.getElementById('table-body');
             var html = '';
             for (var i = 0; i < years.length; i++) {
-                html += '<tr><td>' + years[i] + '</td><td>' + rainfall[i] + '</td><td>' + avgTemp[i] + '</td><td>' + surma[i] + '</td><td>' + kushiyara[i] + '</td></tr>';
+                html += '<tr>';
+                html += '<td>' + years[i] + '</td>';
+                html += '<td>' + rainfall[i] + '</td>';
+                html += '<td>' + avgTemp[i] + '</td>';
+                html += '<td>' + maxTemp[i] + '</td>';
+                html += '<td>' + surma[i] + '</td>';
+                html += '<td>' + kushiyara[i] + '</td>';
+                html += '</tr>';
             }
             tbody.innerHTML = html;
             
-            // Charts
             charts.forEach(function(c) { c.destroy(); });
             charts = [];
             
             var allYears = years.concat([predictYear]);
-            var allRain = rainfall.concat([predRain]);
-            var allSurma = surma.concat([predSurma]);
-            var allKushi = kushiyara.concat([predKushi]);
             
-            charts.push(new Chart(document.getElementById('rain-chart'), {
-                type: 'line',
-                data: {
-                    labels: allYears,
-                    datasets: [{ label: 'Rainfall (mm)', data: allRain, borderColor: '#1a237e', backgroundColor: 'rgba(26,35,126,0.1)', fill: true, tension: 0.3 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            }));
+            var nulls = years.map(function() { return null; });
+            var surmaPredNull = surma.map(function() { return null; });
+            surmaPredNull.push(surma_predicted);
+            var kushiPredNull = kushiyara.map(function() { return null; });
+            kushiPredNull.push(kushiyara_predicted);
             
-            charts.push(new Chart(document.getElementById('water-chart'), {
+            var surmaPredicted = nulls.concat([null]);
+            surmaPredicted.push(surma_predicted);
+            var kushiPredicted = nulls.concat([null]);
+            kushiPredicted.push(kushiyara_predicted);
+            
+            charts.push(new Chart(document.getElementById('surma-chart'), {
                 type: 'line',
                 data: {
                     labels: allYears,
                     datasets: [
-                        { label: 'Surma', data: allSurma, borderColor: '#1976d2', tension: 0.3 },
-                        { label: 'Kushiyara', data: allKushi, borderColor: '#388e3c', tension: 0.3 }
+                        { label: 'Actual', data: surma, borderColor: '#1976d2', backgroundColor: 'rgba(25,118,210,0.1)', fill: true, tension: 0.3, pointRadius: 6 },
+                        { label: 'Predicted ' + predictYear, data: surmaPredNull, borderColor: '#d32f2f', borderDash: [5, 5], tension: 0.3, pointRadius: 8, pointBackgroundColor: '#ffeb3b' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            }));
+            
+            charts.push(new Chart(document.getElementById('kushi-chart'), {
+                type: 'line',
+                data: {
+                    labels: allYears,
+                    datasets: [
+                        { label: 'Actual', data: kushiyara, borderColor: '#388e3c', backgroundColor: 'rgba(56,142,60,0.1)', fill: true, tension: 0.3, pointRadius: 6 },
+                        { label: 'Predicted ' + predictYear, data: kushiPredNull, borderColor: '#d32f2f', borderDash: [5, 5], tension: 0.3, pointRadius: 8, pointBackgroundColor: '#ffeb3b' }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
@@ -709,6 +894,10 @@
             document.getElementById('input-card').classList.add('hidden');
             document.getElementById('result-card').classList.remove('hidden');
             window.scrollTo(0, 0);
+            } catch(e) {
+                alert('Error: ' + e.message + '\nCheck console for details');
+                console.error(e);
+            }
         }
         
         function goBack() {
