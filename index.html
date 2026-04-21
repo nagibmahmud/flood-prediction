@@ -806,8 +806,8 @@ var predictYear = parseInt(document.getElementById('predict_year').value);
             var kushiyara_predicted = Math.round(predictMulti(X_pred, beta_k)[0] * 100) / 100;
             
             document.getElementById('pred-rainfall').textContent = R_pred + ' mm';
-            document.getElementById('pred-temp').textContent = Tavg_pred + ' Â°C';
-            document.getElementById('pred-maxtemp').textContent = Tmax_pred + ' Â°C';
+            document.getElementById('pred-temp').textContent = Tavg_pred + ' °C';
+            document.getElementById('pred-maxtemp').textContent = Tmax_pred + ' °C';
             
             document.getElementById('surma-level').textContent = surma_predicted + ' m';
             document.getElementById('kushi-level').textContent = kushiyara_predicted + ' m';
